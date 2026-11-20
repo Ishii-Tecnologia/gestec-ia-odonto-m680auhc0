@@ -1,12 +1,11 @@
 /* Home Page - pagina inicial do GesTec-IA-Odonto (Etapa 1: fundacao).
-   Sem funcionalidade de negocio: apenas identidade do produto e o estado atual
-   do projeto, para conferir que a base esta de pe. */
+   Identidade do produto e estado atual do projeto, para conferir que a base
+   esta de pe. Sem funcionalidade de negocio. */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-const ETAPA_ATUAL = 1
-const ETAPA_TITULO = 'Fundação'
+import { Logo } from '@/components/Logo'
+import { BRAND } from '@/lib/brand'
 
 const ETAPAS = [
   { numero: 1, titulo: 'Fundação', concluida: true },
@@ -16,18 +15,19 @@ const ETAPAS = [
 const Index = () => {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">GesTec-IA-Odonto</h1>
-        <p className="text-sm text-muted-foreground">
-          Gestão de consultórios e clínicas odontológicas.
-        </p>
+      <div className="flex items-start gap-4">
+        <Logo size={64} />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{BRAND.nome}</h1>
+          <p className="text-sm text-muted-foreground">{BRAND.descricao}</p>
+        </div>
       </div>
+
+      <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{BRAND.slogan}</p>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Etapa {ETAPA_ATUAL} &mdash; {ETAPA_TITULO}
-          </CardTitle>
+          <CardTitle className="text-base">Etapa 1 &mdash; Fundação</CardTitle>
           <CardDescription>
             Base do projeto pronta: cliente de dados, layout e registro de estado. Nenhuma regra de
             negócio foi criada nesta etapa.

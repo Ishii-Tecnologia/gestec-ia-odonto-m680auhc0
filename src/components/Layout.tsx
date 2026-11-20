@@ -1,42 +1,47 @@
 /* Layout Component - estrutura raiz do GesTec-IA-Odonto
-   - Cabeçalho com identidade do produto e área de usuário
-   - Barra lateral de navegação (menu vazio nesta etapa: as rotas chegam junto
-     das etapas que criam as coleções correspondentes)
-   - O conteúdo das rotas é renderizado no Outlet */
+   - Cabecalho com a marca e area de usuario
+   - Barra lateral de navegacao (menu vazio nesta etapa: as rotas chegam junto
+     das etapas que criam as colecoes correspondentes)
+   - O conteudo das rotas e renderizado no Outlet */
 
 import { Outlet, NavLink } from 'react-router-dom'
-import { Stethoscope, UserRound } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/Logo'
+import { BRAND } from '@/lib/brand'
 
 interface NavItem {
   label: string
   to: string
 }
 
-// Etapa 1: menu vazio de propósito. Cada item entra na etapa que cria a
-// coleção e a permissão correspondente.
+// Etapa 1: menu vazio de proposito. Cada item entra na etapa que cria a
+// colecao e a permissao correspondente.
 const NAV_ITEMS: NavItem[] = []
 
 export default function Layout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex h-14 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
-          <Stethoscope className="h-5 w-5 text-primary" />
-          <span className="text-sm font-semibold tracking-tight">GesTec-IA-Odonto</span>
+      <header className="flex h-16 items-center justify-between border-b px-4">
+        <div className="flex items-center gap-2.5">
+          <Logo size={34} />
+          <div className="leading-tight">
+            <div className="text-sm font-semibold tracking-tight">{BRAND.nome}</div>
+            <div className="text-[11px] text-muted-foreground">{BRAND.descricao}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <UserRound className="h-4 w-4" />
-          <span>Sessão não iniciada</span>
+          <span>Sessao nao iniciada</span>
         </div>
       </header>
 
       <div className="flex flex-1">
         <aside className="hidden w-56 shrink-0 border-r p-3 md:block">
-          <nav className="flex flex-col gap-1" aria-label="Navegação principal">
+          <nav className="flex flex-col gap-1" aria-label="Navegacao principal">
             {NAV_ITEMS.length === 0 ? (
               <p className="px-2 py-1.5 text-xs leading-relaxed text-muted-foreground">
-                Nenhum módulo habilitado ainda.
+                Nenhum modulo habilitado ainda.
               </p>
             ) : (
               NAV_ITEMS.map((item) => (
