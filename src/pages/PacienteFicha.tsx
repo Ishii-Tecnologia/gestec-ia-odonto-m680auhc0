@@ -183,7 +183,10 @@ export default function PacienteFicha() {
     setSalvandoAnamnese(true)
     setErro('')
     try {
-      // versao e autor_id são atribuídos pelo servidor (hook), não aqui.
+      // `versao` e `autor_id` são atribuídos pelo servidor (hooks) — não
+      // mandamos, e o servidor sobrescreveria se mandássemos.
+      // `tenant_id` precisa ir no corpo: a regra de create da coleção o exige
+      // na avaliação, e o hook não substitui isso.
       await pb.collection('anamnese').create({
         tenant_id: sessao.tenantId,
         paciente_id: id,
