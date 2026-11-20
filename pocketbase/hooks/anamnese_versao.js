@@ -36,7 +36,9 @@ onRecordCreate((e) => {
     maior = 0
   }
 
+  console.log('[anamnese] maior versao existente=' + maior + ' -> nova=' + (maior + 1))
   e.record.set('versao', maior + 1)
+  console.log('[anamnese] versao setada, validando')
 
   return e.next()
 }, 'anamnese')
