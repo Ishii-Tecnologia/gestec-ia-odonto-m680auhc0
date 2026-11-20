@@ -8,7 +8,17 @@
    tem a regra de acesso no servidor. */
 
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { UserRound, LogOut, Users, ScrollText, Home, Contact, CalendarDays } from 'lucide-react'
+import {
+  UserRound,
+  LogOut,
+  Users,
+  ScrollText,
+  Home,
+  Contact,
+  CalendarDays,
+  BookOpen,
+  Tags,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
 import { BRAND } from '@/lib/brand'
@@ -28,6 +38,8 @@ const ITENS: ItemMenu[] = [
   { label: 'Início', to: '/', icone: Home, visivel: () => true },
   { label: 'Agenda', to: '/agenda', icone: CalendarDays, visivel: () => true },
   { label: 'Pacientes', to: '/pacientes', icone: Contact, visivel: () => true },
+  { label: 'Catálogo', to: '/catalogo', icone: BookOpen, visivel: () => true },
+  { label: 'Tabelas de preço', to: '/tabelas-preco', icone: Tags, visivel: () => true },
   {
     label: 'Usuários',
     to: '/usuarios',

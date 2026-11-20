@@ -18,6 +18,8 @@ import Pacientes from './pages/Pacientes'
 import PacienteForm from './pages/PacienteForm'
 import PacienteFicha from './pages/PacienteFicha'
 import Agenda from './pages/Agenda'
+import Catalogo from './pages/Catalogo'
+import TabelasPreco from './pages/TabelasPreco'
 import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -69,6 +71,10 @@ const App = () => (
             />
             {/* agenda: operada pela recepção */}
             <Route path="/agenda" element={<Agenda />} />
+
+            {/* catálogo e preços: recepção consulta; quem atende administra */}
+            <Route path="/catalogo" element={<Catalogo />} />
+            <Route path="/tabelas-preco" element={<TabelasPreco />} />
 
             {/* pacientes: cadastro é da recepção também */}
             <Route path="/pacientes" element={<Pacientes />} />
