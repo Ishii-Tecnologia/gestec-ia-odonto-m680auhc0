@@ -73,7 +73,7 @@ routerAdd(
       const aud = new Record($app.findCollectionByNameOrId('auditoria_acesso'))
       aud.set('tenant_id', tenantCaller)
       aud.set('usuario_id', e.auth.id)
-      aud.set('acao', 'desativar_usuario')
+      aud.set('acao', ativo ? 'ativar_usuario' : 'desativar_usuario')
       aud.set('motivo', (ativo ? 'ativou ' : 'desativou ') + alvo.getString('email'))
       aud.set('ip', String(e.request.remoteAddr || '').split(':')[0])
       aud.set('rota', '/backend/v1/definir-ativo')

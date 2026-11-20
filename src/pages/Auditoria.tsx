@@ -34,6 +34,7 @@ const ROTULO_ACAO: Record<string, string> = {
   exportar: 'Exportar',
   tentativa_negada: 'Acesso negado',
   convite_usuario: 'Convite de usuário',
+  ativar_usuario: 'Ativação de usuário',
   desativar_usuario: 'Desativação de usuário',
   trocar_papel: 'Troca de papel',
 }
