@@ -17,6 +17,7 @@ import Prontuario from './pages/Prontuario'
 import Pacientes from './pages/Pacientes'
 import PacienteForm from './pages/PacienteForm'
 import PacienteFicha from './pages/PacienteFicha'
+import Agenda from './pages/Agenda'
 import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -66,6 +67,9 @@ const App = () => (
                 </RotaProtegida>
               }
             />
+            {/* agenda: operada pela recepção */}
+            <Route path="/agenda" element={<Agenda />} />
+
             {/* pacientes: cadastro é da recepção também */}
             <Route path="/pacientes" element={<Pacientes />} />
             <Route path="/pacientes/novo" element={<PacienteForm />} />
