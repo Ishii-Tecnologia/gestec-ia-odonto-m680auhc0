@@ -58,6 +58,15 @@ routerAdd(
     }
 
     alvo.set('ativo', ativo)
+
+    // REVOGAÇÃO IMEDIATA DOS TOKENS
+    // O token de autenticação do PocketBase dura 5 dias e não é consultado
+    // contra o banco a cada requisição: desativar o usuário sem mais nada
+    // deixaria o token emitido antes continuar lendo dados clínicos por dias
+    // (comprovado em teste). Trocar o tokenKey invalida na hora todo token já
+    // emitido para este usuário, porque a assinatura deixa de conferir.
+    alvo.set('tokenKey', $security.randomString(50))
+
     $app.save(alvo)
 
     try {

@@ -2,6 +2,7 @@
 
    1. Bloqueia login de usuario desativado (ativo = false).
    2. Registra o login bem-sucedido na auditoria.
+   3. Bloqueia a RENOVACAO do token de uma conta desativada.
 
    Regras do guia do Skip Cloud que valem aqui:
    - toda saida que PERMITE o login passa por e.next();
@@ -11,12 +12,15 @@
      _superusers e tranca a plataforma fora do painel.
 
    DESCOBERTA IMPORTANTE: no hook de autenticacao o objeto `e.request` NAO
-   existe (e o MESMO evento de record hook, sem a requisicao HTTP exposta),
-   e ler `e.request.remoteAddr` lanca "Cannot read property 'remoteAddr' of
-   undefined". O acesso vem por `e.requestInfo()`, e o IP pelos cabecalhos
-   repassados pelo proxy do Skip. Por isso o IP sai de um trecho todo
-   protegido, com fallback para string vazia: auditar nunca pode derrubar
-   um login valido. */
+   existe, e ler `e.request.remoteAddr` lanca
+   "Cannot read property 'remoteAddr' of undefined". O IP vem pelos cabecalhos
+   repassados pelo proxy. Tudo envolvido em try/catch: auditar nunca pode
+   derrubar um login valido.
+
+   Sobre o item 3: a revogacao completa de uma conta desativada e feita na
+   rota /backend/v1/definir-ativo, que troca o tokenKey e invalida na hora os
+   tokens ja emitidos. Este bloqueio cobre o outro caminho — alguem tentando
+   renovar um token antes de a troca de tokenKey ter acontecido. */
 
 onRecordAuthWithPasswordRequest((e) => {
   if (!e.record) return e.next()
@@ -26,7 +30,7 @@ onRecordAuthWithPasswordRequest((e) => {
   }
 
   try {
-    // IP: no hook de auth nao ha e.request; vem pelos headers do proxy.
+    // No hook de auth nao ha e.request: o IP vem pelos headers do proxy.
     let ip = ''
     try {
       const info = e.requestInfo()
@@ -48,5 +52,12 @@ onRecordAuthWithPasswordRequest((e) => {
     // auditar nunca pode derrubar o login
   }
 
+  return e.next()
+}, 'users')
+
+onRecordAuthRefreshRequest((e) => {
+  if (e.record && e.record.getBool('ativo') === false) {
+    throw new BadRequestError('Conta desativada. Procure o responsavel pela clinica.')
+  }
   return e.next()
 }, 'users')
