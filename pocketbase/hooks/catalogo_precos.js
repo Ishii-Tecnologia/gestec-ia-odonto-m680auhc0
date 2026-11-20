@@ -369,7 +369,16 @@ routerAdd(
       for (const p of lista) existentes[p.getString('codigo').toLowerCase()] = p.getString('nome')
     } catch (_) {}
 
-    // especialidades por código e por nome (minúsculo)
+    /* Especialidades indexadas para casar o que a planilha traz.
+       Aceito: código CFO exato (ENDO), e o nome por CONTENÇÃO nos dois
+       sentidos — "clinica" casa com "Saúde Coletiva"? Não. E é por isso que
+       aqui há uma tabela de sinônimos: planilha de consultório escreve
+       "clinica geral", "dentistica", "cirurgia" e isso não é o nome CFO.
+
+       Eu tinha feito casamento por igualdade exata de nome e depois por
+       prefixo, e "CLINICA" não casava com nada — o importador recusava um CSV
+       legítimo. Sinônimo explícito é mais honesto que adivinhação por
+       substring: se não estiver mapeado, o erro DIZ qual termo não casou. */
     const espPorCodigo = {}
     const espPorNome = {}
     try {
@@ -379,6 +388,44 @@ routerAdd(
         espPorNome[s.getString('nome').toLowerCase()] = s.id
       }
     } catch (_) {}
+
+    // termos leigos -> código CFO
+    const sinonimos = {
+      clinica: 'DENT',
+      'clinica geral': 'DENT',
+      dentistica: 'DENT',
+      dentística: 'DENT',
+      restauracao: 'DENT',
+      restauração: 'DENT',
+      cirurgia: 'CTBMF',
+      endodontia: 'ENDO',
+      canal: 'ENDO',
+      periodontia: 'PERIO',
+      gengiva: 'PERIO',
+      odontopediatria: 'ODPED',
+      infantil: 'ODPED',
+      protese: 'PROT',
+      prótese: 'PROT',
+      coroa: 'PROT',
+      implante: 'IMPL',
+      implantodontia: 'IMPL',
+      ortodontia: 'ORTO',
+      aparelho: 'ORTO',
+      estetica: 'CEOF',
+      estética: 'CEOF',
+    }
+
+    function achaEspecialidade(texto) {
+      const t = texto.trim()
+      if (!t) return ''
+      const porCodigo = espPorCodigo[t.toUpperCase()]
+      if (porCodigo) return porCodigo
+      const porNome = espPorNome[t.toLowerCase()]
+      if (porNome) return porNome
+      const codSin = sinonimos[t.toLowerCase()]
+      if (codSin && espPorCodigo[codSin]) return espPorCodigo[codSin]
+      return ''
+    }
 
     for (let n = 1; n < linhas.length; n++) {
       const bruta = linhas[n]
@@ -408,8 +455,14 @@ routerAdd(
 
       let espId = ''
       if (espTexto) {
-        espId = espPorCodigo[espTexto.toUpperCase()] || espPorNome[espTexto.toLowerCase()] || ''
-        if (!espId) problemas.push('especialidade nao encontrada: "' + espTexto + '"')
+        espId = achaEspecialidade(espTexto)
+        if (!espId) {
+          problemas.push(
+            'especialidade nao encontrada: "' +
+              espTexto +
+              '" (use o codigo CFO, ex. DENT, ou o nome)',
+          )
+        }
       }
 
       let porDente = false

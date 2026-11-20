@@ -41,12 +41,22 @@ migrate(
     } catch (_) {}
 
     // ---------- especialidades existentes ----------
-    const espId = (codigo) => {
+    /* Busca a especialidade pelo CÓDIGO CFO exato e, se não achar, pelo NOME.
+       Antes eu devolvia '' em silêncio e o procedimento era gravado sem
+       especialidade — foi assim que os 10 primeiros ficaram vazios. Agora o
+       fallback por nome cobre diferença de código, e o log avisa quando nem
+       isso resolveu. */
+    const espId = (codigo, nome) => {
       try {
         return app.findFirstRecordByData('especialidade', 'codigo', codigo).id
-      } catch (_) {
-        return ''
+      } catch (_) {}
+      if (nome) {
+        try {
+          return app.findFirstRecordByFilter('especialidade', 'nome ~ "' + nome + '"').id
+        } catch (_) {}
       }
+      console.log('[seed-catalogo] ATENCAO: especialidade nao encontrada: ' + codigo)
+      return ''
     }
 
     // ---------- convênios ----------
@@ -73,24 +83,31 @@ migrate(
     // ---------- procedimentos ----------
     // codigo, nome, especialidade CFO, por_dente, valor particular, valor prev
     const lista = [
-      ['PROF-001', 'Consulta de avaliacao inicial', 'CLINICA', false, 15000, 9000],
-      ['PROF-002', 'Profilaxia com jato e escovacao', 'CLINICA', false, 12000, 7000],
-      ['PROF-003', 'Aplicacao de fluor', 'CLINICA', false, 8000, 5000],
-      ['PROF-004', 'Restauracao em resina composta - face unica', 'DENTISTICA', true, 18000, 12000],
-      [
-        'PROF-005',
-        'Restauracao em resina composta - multiplas faces',
-        'DENTISTICA',
-        true,
-        25000,
-        17000,
-      ],
-      ['PROF-006', 'Extracao de dente permanente', 'CIRURGIA', true, 22000, 15000],
-      ['PROF-007', 'Tratamento endodontico unirradicular', 'ENDODONTIA', true, 60000, 42000],
-      ['PROF-008', 'Raspagem periodontal por sextante', 'PERIODONTIA', true, 20000, 13000],
-      ['PROF-009', 'Selante de fissura', 'ODONTOPEDIATRIA', true, 9000, 6000],
-      ['PROF-010', 'Coroas totais em porcelana', 'PROTESE', true, 90000, 68000],
+      // Códigos CFO REAIS da tabela `especialidade` da Etapa 3 (DENT, CTBMF,
+      // ENDO, PERIO, ODPED, PROT). Eu tinha inventado rótulos aqui e o seed
+      // gravou 10 procedimentos sem especialidade, em silêncio.
+      ['PROF-001', 'Consulta de avaliacao inicial', 'DENT', false, 15000, 9000],
+      ['PROF-002', 'Profilaxia com jato e escovacao', 'DENT', false, 12000, 7000],
+      ['PROF-003', 'Aplicacao de fluor', 'DENT', false, 8000, 5000],
+      ['PROF-004', 'Restauracao em resina composta - face unica', 'DENT', true, 18000, 12000],
+      ['PROF-005', 'Restauracao em resina composta - multiplas faces', 'DENT', true, 25000, 17000],
+      ['PROF-006', 'Extracao de dente permanente', 'CTBMF', true, 22000, 15000],
+      ['PROF-007', 'Tratamento endodontico unirradicular', 'ENDO', true, 60000, 42000],
+      ['PROF-008', 'Raspagem periodontal por sextante', 'PERIO', true, 20000, 13000],
+      ['PROF-009', 'Selante de fissura', 'ODPED', true, 9000, 6000],
+      ['PROF-010', 'Coroas totais em porcelana', 'PROT', true, 90000, 68000],
     ]
+
+    // nome por extenso como segunda tentativa de casar a especialidade, caso o
+    // código CFO mude de grafia
+    const espNomes = {
+      DENT: 'Dentística',
+      CTBMF: 'Cirurgia',
+      ENDO: 'Endodontia',
+      PERIO: 'Periodontia',
+      ODPED: 'Odontopediatria',
+      PROT: 'Prótese',
+    }
 
     const procIds = {}
     for (const [codigo, nome, esp, porDente, vPart, vPrev] of lista) {
@@ -105,7 +122,7 @@ migrate(
         p.set('tenant_id', tenant)
         p.set('codigo', codigo)
         p.set('nome', nome)
-        const e = espId(esp)
+        const e = espId(esp, espNomes[esp])
         if (e) p.set('especialidade_id', e)
         p.set('por_dente', porDente)
         p.set('ativo', true)
