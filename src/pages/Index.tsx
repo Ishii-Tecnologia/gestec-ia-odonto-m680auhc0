@@ -6,15 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 
 const ETAPA_ATUAL = 1
-const ETAPA_TITULO = 'Fundacao'
+const ETAPA_TITULO = 'Fundação'
 
 const ETAPAS = [
-  { numero: 1, titulo: 'Fundacao', status: 'concluida' as const },
-  {
-    numero: 2,
-    titulo: 'Identidade e isolamento',
-    status: 'proxima' as const,
-  },
+  { numero: 1, titulo: 'Fundação', concluida: true },
+  { numero: 2, titulo: 'Identidade e isolamento', concluida: false },
 ]
 
 const Index = () => {
@@ -23,7 +19,7 @@ const Index = () => {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">GesTec-IA-Odonto</h1>
         <p className="text-sm text-muted-foreground">
-          Gestao de consultorios e clinicas odontologicas.
+          Gestão de consultórios e clínicas odontológicas.
         </p>
       </div>
 
@@ -34,7 +30,7 @@ const Index = () => {
           </CardTitle>
           <CardDescription>
             Base do projeto pronta: cliente de dados, layout e registro de estado. Nenhuma regra de
-            negocio foi criada nesta etapa.
+            negócio foi criada nesta etapa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -43,11 +39,11 @@ const Index = () => {
             <span>Skip Cloud (PocketBase)</span>
           </div>
           <div className="flex items-center justify-between gap-4 border-b pb-2">
-            <span className="text-muted-foreground">Colecoes criadas</span>
+            <span className="text-muted-foreground">Coleções criadas</span>
             <span>0</span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted-foreground">Proxima etapa</span>
+            <span className="text-muted-foreground">Próxima etapa</span>
             <span>2 &mdash; Identidade e isolamento</span>
           </div>
         </CardContent>
@@ -64,8 +60,8 @@ const Index = () => {
               <span>
                 {etapa.numero} &mdash; {etapa.titulo}
               </span>
-              <Badge variant={etapa.status === 'concluida' ? 'default' : 'outline'}>
-                {etapa.status === 'concluida' ? 'concluida' : 'proxima'}
+              <Badge variant={etapa.concluida ? 'default' : 'outline'}>
+                {etapa.concluida ? 'concluída' : 'próxima'}
               </Badge>
             </li>
           ))}

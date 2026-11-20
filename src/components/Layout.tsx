@@ -1,8 +1,8 @@
 /* Layout Component - estrutura raiz do GesTec-IA-Odonto
-   - Header com identidade do produto e area de usuario
-   - Barra lateral de navegacao (menu vazio nesta etapa: as rotas chegam junto
-     das etapas que criam as colecoes correspondentes)
-   - O conteudo das rotas e renderizado no Outlet */
+   - Cabeçalho com identidade do produto e área de usuário
+   - Barra lateral de navegação (menu vazio nesta etapa: as rotas chegam junto
+     das etapas que criam as coleções correspondentes)
+   - O conteúdo das rotas é renderizado no Outlet */
 
 import { Outlet, NavLink } from 'react-router-dom'
 import { Stethoscope, UserRound } from 'lucide-react'
@@ -13,8 +13,8 @@ interface NavItem {
   to: string
 }
 
-// Etapa 1: menu vazio de proposito. Cada item entra na etapa que cria a
-// colecao e a permissao correspondente.
+// Etapa 1: menu vazio de propósito. Cada item entra na etapa que cria a
+// coleção e a permissão correspondente.
 const NAV_ITEMS: NavItem[] = []
 
 export default function Layout() {
@@ -27,16 +27,16 @@ export default function Layout() {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <UserRound className="h-4 w-4" />
-          <span>Sessao nao iniciada</span>
+          <span>Sessão não iniciada</span>
         </div>
       </header>
 
       <div className="flex flex-1">
         <aside className="hidden w-56 shrink-0 border-r p-3 md:block">
-          <nav className="flex flex-col gap-1" aria-label="Navegacao principal">
+          <nav className="flex flex-col gap-1" aria-label="Navegação principal">
             {NAV_ITEMS.length === 0 ? (
               <p className="px-2 py-1.5 text-xs leading-relaxed text-muted-foreground">
-                Nenhum modulo habilitado ainda.
+                Nenhum módulo habilitado ainda.
               </p>
             ) : (
               NAV_ITEMS.map((item) => (
