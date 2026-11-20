@@ -1,33 +1,37 @@
-/* Marca do GesTec-IA-Odonto em SVG.
+/* Marca do GesTec-IA-Odonto em SVG — recreação vetorial do ícone oficial.
 
-   Recriada em vetor a partir do logo original (dente branco dentro de anel
-   azul, com malha de nós e linhas de circuito). Vetor em vez de bitmap porque:
-   - e nitido em qualquer tamanho (favicon, cabecalho, impressao);
-   - pesa poucos KB;
-   - acompanha a paleta definida em src/lib/brand.ts.
+   Reproduz o ícone enviado pela empresa:
+   - círculo com gradiente do azul profundo (esquerda) ao verde (direita);
+   - anel fino branco na borda;
+   - dente branco ao centro;
+   - malha de nós interligados (circuito/molécula) na parte superior;
+   - trilhas de circuito com nós na parte inferior.
 
-   O arquivo binario original continua sendo a referencia visual; este SVG
-   reproduz a mesma linguagem grafica em codigo. */
+   Vetor em vez de bitmap porque o workspace do Skip aceita apenas arquivos de
+   texto (não aceita upload binário). Resultado: nítido em qualquer tamanho,
+   poucos KB, e nenhum risco de arquivo de imagem faltar no deploy.
+   O PNG original continua sendo a referência visual para o refinamento final. */
 
+import { useId } from 'react'
 import type { SVGProps } from 'react'
 
 interface Props extends SVGProps<SVGSVGElement> {
   size?: number
-  /** 'colorido' usa o anel azul; 'branco' desenha tudo em branco (para fundo escuro) */
+  /** 'colorido' usa o gradiente azul→verde; 'branco' desenha tudo em branco. */
   variante?: 'colorido' | 'branco'
 }
 
+/* Nós da malha superior, em coordenadas do viewBox 100x100. */
 const NOS: Array<[number, number]> = [
-  [50, 10],
-  [74, 17],
-  [88, 38],
-  [84, 63],
-  [68, 82],
-  [46, 90],
-  [24, 82],
-  [11, 61],
-  [14, 36],
-  [30, 16],
+  [50, 12],
+  [68, 18],
+  [79, 32],
+  [78, 49],
+  [66, 61],
+  [34, 61],
+  [22, 49],
+  [21, 32],
+  [32, 18],
 ]
 
 const LIGACOES: Array<[number, number]> = [
@@ -39,17 +43,18 @@ const LIGACOES: Array<[number, number]> = [
   [5, 6],
   [6, 7],
   [7, 8],
-  [8, 9],
-  [9, 0],
-  [9, 5],
-  [1, 6],
+  [8, 0],
+  [8, 1],
+  [3, 6],
 ]
 
 export function Logo({ size = 32, variante = 'colorido', ...props }: Props) {
+  const uid = useId().replace(/:/g, '')
+  const gradId = `gestec-grad-${uid}`
   const branco = variante === 'branco'
-  const anel = branco ? '#FFFFFF' : '#123B72'
-  const anelInterno = branco ? '#FFFFFF' : '#1E6FD9'
-  const malha = branco ? '#FFFFFF' : '#7FC4F5'
+
+  const traco = branco ? '#FFFFFF' : '#FFFFFF'
+  const noCor = branco ? '#FFFFFF' : '#DCEBFF'
 
   return (
     <svg
@@ -60,45 +65,58 @@ export function Logo({ size = 32, variante = 'colorido', ...props }: Props) {
       aria-label="GesTec-IA-Odonto"
       {...props}
     >
-      {/* anel externo */}
-      <circle cx="50" cy="50" r="47" fill="none" stroke={anel} strokeWidth="4" />
-      {/* anel interno */}
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0E2F63" />
+          <stop offset="45%" stopColor="#1668C9" />
+          <stop offset="100%" stopColor="#1FB47A" />
+        </linearGradient>
+      </defs>
+
+      {/* fundo circular com gradiente */}
+      <circle cx="50" cy="50" r="48" fill={branco ? 'none' : `url(#${gradId})`} />
+      {/* anel fino branco na borda */}
       <circle
         cx="50"
         cy="50"
-        r="41"
+        r="46.5"
         fill="none"
-        stroke={anelInterno}
-        strokeWidth="1.2"
-        opacity="0.7"
+        stroke="#FFFFFF"
+        strokeWidth="1.1"
+        opacity={branco ? 0.9 : 0.5}
       />
 
-      {/* malha de conexao: ligacoes primeiro, nos depois */}
-      <g stroke={malha} strokeWidth="0.9" opacity="0.85">
+      {/* malha superior: ligações primeiro, nós por cima */}
+      <g stroke={traco} strokeWidth="0.75" opacity="0.65">
         {LIGACOES.map(([a, b], i) => (
           <line key={i} x1={NOS[a][0]} y1={NOS[a][1]} x2={NOS[b][0]} y2={NOS[b][1]} />
         ))}
       </g>
-      <g fill={malha}>
+      <g fill={noCor}>
         {NOS.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r="1.7" />
+          <circle key={i} cx={x} cy={y} r={i === 0 ? 1.9 : 1.5} />
         ))}
       </g>
 
-      {/* dente */}
+      {/* dente branco */}
       <path
-        d="M50 26c-5 0-8 3-13 3-4 0-7 3-7 9 0 5 2 8 3 13 1 4 1 9 2 14 1 5 2 9 5 9 3 0 3-4 4-8 1-4 2-7 6-7s5 3 6 7c1 4 1 8 4 8 3 0 4-4 5-9 1-5 1-10 2-14 1-5 3-8 3-13 0-6-3-9-7-9-5 0-8-3-13-3z"
+        d="M50 27.5c-4.6 0-7.4 2.6-12 2.6-3.7 0-6.4 2.7-6.4 8.2 0 4.5 1.8 7.3 2.7 11.8.9 3.6.9 8.2 1.8 12.7.9 4.5 1.8 8.2 4.6 8.2 2.7 0 2.7-3.7 3.6-7.3.9-3.6 1.8-6.4 5.5-6.4s4.6 2.8 5.5 6.4c.9 3.6.9 7.3 3.6 7.3 2.8 0 3.7-3.7 4.6-8.2.9-4.5.9-9.1 1.8-12.7.9-4.5 2.7-7.3 2.7-11.8 0-5.5-2.7-8.2-6.4-8.2-4.6 0-7.4-2.6-12-2.6z"
         fill="#FFFFFF"
-        stroke={branco ? '#FFFFFF' : anel}
-        strokeWidth="1.6"
-        strokeLinejoin="round"
       />
 
-      {/* linhas de circuito sob o dente */}
-      <g stroke={malha} strokeWidth="0.9" fill="none" opacity="0.9">
-        <path d="M40 68v5h-4v6" />
-        <path d="M50 70v9" />
-        <path d="M60 68v5h4v6" />
+      {/* circuito inferior: trilhas com nós */}
+      <g stroke={traco} strokeWidth="0.8" fill="none" opacity="0.75">
+        <path d="M50 66v6" />
+        <path d="M50 72h-6v5" />
+        <path d="M50 72h6v5" />
+        <path d="M38 68v4h-5v6" />
+        <path d="M62 68v4h5v6" />
+      </g>
+      <g fill={noCor} opacity="0.9">
+        <circle cx="33" cy="80" r="1.3" />
+        <circle cx="44" cy="79" r="1.3" />
+        <circle cx="56" cy="79" r="1.3" />
+        <circle cx="67" cy="80" r="1.3" />
       </g>
     </svg>
   )
