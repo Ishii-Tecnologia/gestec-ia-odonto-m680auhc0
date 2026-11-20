@@ -103,9 +103,9 @@ migrate(
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
+      // o índice de plano_anterior_id entra depois do campo (ver abaixo)
       indexes: [
         'CREATE INDEX idx_plano_paciente ON plano_tratamento (tenant_id, paciente_id, created DESC)',
-        'CREATE INDEX idx_plano_anterior ON plano_tratamento (plano_anterior_id)',
       ],
     })
     app.save(plano)
@@ -120,6 +120,13 @@ migrate(
         cascadeDelete: false,
       }),
     )
+    // Índice só DEPOIS do campo existir: criar o índice na mesma passada em que
+    // a coleção nasce falha com "no such column", porque o CREATE INDEX roda
+    // antes de a coluna ser adicionada.
+    colPlano.indexes = [
+      ...colPlano.indexes,
+      'CREATE INDEX idx_plano_anterior ON plano_tratamento (plano_anterior_id)',
+    ]
     app.save(colPlano)
 
     // ---------- fase ----------
