@@ -8,31 +8,31 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 | Campo         | Valor                                                  |
 | ------------- | ------------------------------------------------------ |
-| Etapa atual   | 4 — Acesso e auditoria                                 |
+| Etapa atual   | 5 — Pacientes                                          |
 | Status        | concluída (build verde + testes de API e de interface) |
-| Próxima etapa | 5 — Pacientes                                          |
+| Próxima etapa | 6 — Agenda                                             |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)  |
-| Versão        | 0.0.20                                                 |
+| Versão        | 0.0.29                                                 |
 
 ## Etapas
 
-| #   | Etapa                   | Status    | Observação                                                                       |
-| --- | ----------------------- | --------- | -------------------------------------------------------------------------------- |
-| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro       |
-| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo              |
-| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo      |
-| 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários |
-| 5   | Pacientes               | pendente  | cadastro, alertas clínicos, responsável legal, anamnese versionada               |
-| 6   | Agenda                  | pendente  | `agenda_slot` com índice único por profissional e por sala                       |
-| 7   | Prontuário              | pendente  | evolução append-only, odontograma, sigilo restrito ao responsável                |
-| 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                         |
-| 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                               |
-| 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                          |
-| 11  | Financeiro gerencial    | pendente  | despesas, DRE, fluxo 90 dias, aging                                              |
-| 12  | Relatórios operacionais | pendente  | painel, faltas, produção                                                         |
-| 13  | Comunicação             | pendente  | lembretes de consulta, retorno e aniversário                                     |
-| 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                         |
-| 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                                    |
+| #   | Etapa                   | Status    | Observação                                                                               |
+| --- | ----------------------- | --------- | ---------------------------------------------------------------------------------------- |
+| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro               |
+| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo                      |
+| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo              |
+| 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários         |
+| 5   | Pacientes               | concluída | cadastro, alertas clínicos com faixa de destaque, responsável legal, anamnese versionada |
+| 6   | Agenda                  | pendente  | `agenda_slot` com índice único por profissional e por sala                               |
+| 7   | Prontuário              | pendente  | evolução append-only, odontograma, sigilo restrito ao responsável                        |
+| 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
+| 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
+| 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
+| 11  | Financeiro gerencial    | pendente  | despesas, DRE, fluxo 90 dias, aging                                                      |
+| 12  | Relatórios operacionais | pendente  | painel, faltas, produção                                                                 |
+| 13  | Comunicação             | pendente  | lembretes de consulta, retorno e aniversário                                             |
+| 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                                 |
+| 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                                            |
 
 ## Decisões fechadas
 
@@ -70,6 +70,10 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | `usuario_profissional`       | por tenant  | vínculo usuário ↔ profissional (vínculo opcional)                                                                                |
 | `profissional_especialidade` | por tenant  | detalhe do título: instituição, data de registro no CRO                                                                          |
 | `auditoria_acesso`           | por tenant  | create do próprio tenant; leitura só proprietário/gestor; **update e delete nulos**                                              |
+| `paciente`                   | por tenant  | todos os papéis leem; recepção e dentista cadastram; delete só proprietário                                                      |
+| `responsavel_legal`          | por tenant  | idem paciente                                                                                                                    |
+| `alerta_clinico`             | por tenant  | **todos leem** (segurança); escrita só clínico; delete proprietário/gestor                                                       |
+| `anamnese`                   | por tenant  | só papéis clínicos leem/escrevem; **update e delete nulos**                                                                      |
 
 Nenhuma regra nula fora dos catálogos globais e do `create`/`delete` de `tenant`,
 que são nulos por decisão.
@@ -154,6 +158,24 @@ Três camadas, e a ordem importa:
    permite o próprio cadastro; `ativo` não estava travado. Correção na
    migration `0008`: `ativo` também é imutável pelo próprio usuário.
 
+## Etapa 5 — decisões de acesso
+
+- **Alerta clínico é lido por TODOS os papéis**, inclusive recepção e
+  financeiro. É exceção deliberada ao sigilo: uma alergia a dipirona é
+  informação de segurança. Se a recepção não vê, ela marca a consulta e
+  ninguém percebe. Segurança da pessoa vence sigilo do dado.
+- **Anamnese é só para papéis clínicos.** É histórico completo; a recepção não
+  tem o que fazer com ele.
+- **Anamnese não tem update nem delete.** Corrigir é criar a versão seguinte.
+  A versão é atribuída pelo servidor (hook `onRecordCreate`), não pelo cliente:
+  duas abas abertas não podem gerar a mesma versão.
+- **Autor da anamnese vem do token**, nunca do corpo do pedido. Sem isso,
+  alguém registraria anamnese em nome de outro profissional e o prontuário
+  passaria a mentir sobre quem atestou.
+- **Responsável legal para menor de 18** é validado na aplicação (a regra da
+  coleção não compara data com "hoje"). Pendência registrada: quem chamar a
+  API direto ainda consegue criar menor sem responsável.
+
 ## Correções registradas
 
 - `0005`: as regras de update usavam `@request.body.tenant_id:changed`, que o
@@ -185,9 +207,33 @@ Três camadas, e a ordem importa:
 | Token antigo do desativado lê dados     | negado               | ✔ 0 registros                               |
 | Refresh do token do desativado          | negado               | ✔ 401                                       |
 
+### Etapa 5
+
+| Teste                                        | Esperado              | Resultado                                        |
+| -------------------------------------------- | --------------------- | ------------------------------------------------ |
+| Alergia crítica aparece na lista             | faixa de destaque     | ✔                                                |
+| Alergia crítica aparece na ficha             | faixa em qualquer aba | ✔                                                |
+| Nova anamnese cria versão 2                  | sim                   | ✔ (versão vem do servidor)                       |
+| Versão 1 continua consultável                | sim                   | ✔                                                |
+| Update em anamnese                           | rejeitado             | ✔ 403                                            |
+| Delete em anamnese                           | rejeitado             | ✔ 403                                            |
+| Recepção vê paciente                         | sim                   | ✔                                                |
+| Recepção vê alerta clínico                   | sim (segurança)       | ✔                                                |
+| Recepção lê anamnese                         | negado                | ✔ 0 registros                                    |
+| Recepção cria alerta                         | negado                | ✔ 400                                            |
+| Dentista cria alerta                         | permitido             | ✔ 200                                            |
+| Beta lê paciente da Alfa                     | negado                | ✔ 404                                            |
+| **Beta cria anamnese para paciente da Alfa** | negado                | **✘ vazamento → corrigido na 0.0.28, agora 400** |
+| Beta cria alerta para paciente da Alfa       | negado                | ✔ 400 (após correção)                            |
+| Beta cria responsável para paciente da Alfa  | negado                | ✔ 400 (após correção)                            |
+
 ## Pendências
 
 - Definir e-mails reais e senha inicial dos usuários do cliente piloto.
 - Confirmar se a marca vetorial recriada em `src/components/Logo.tsx` reproduz
   fielmente o ícone enviado (o PNG original é a referência; o SVG foi
   redesenhado porque o workspace do Skip não aceita upload binário).
+- SMTP do projeto não configurado: o convite cria a conta, mas o e-mail de
+  definição de senha não sai. Hoje o caminho é o proprietário combinar a senha.
+
+=======
