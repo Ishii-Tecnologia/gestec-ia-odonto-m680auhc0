@@ -13,14 +13,14 @@ const ETAPAS: Array<{ numero: number; titulo: string; status: Status }> = [
   { numero: 1, titulo: 'Fundação', status: 'concluida' },
   { numero: 2, titulo: 'Identidade e isolamento', status: 'concluida' },
   { numero: 3, titulo: 'Núcleo organizacional', status: 'concluida' },
-  { numero: 4, titulo: 'Acesso e auditoria', status: 'proxima' },
-  { numero: 5, titulo: 'Pacientes', status: 'pendente' },
+  { numero: 4, titulo: 'Acesso e auditoria', status: 'concluida' },
+  { numero: 5, titulo: 'Pacientes', status: 'proxima' },
   { numero: 6, titulo: 'Agenda', status: 'pendente' },
 ]
 
 const RESUMO: Array<{ rotulo: string; valor: string }> = [
   { rotulo: 'Backend e banco', valor: 'Skip Cloud (PocketBase)' },
-  { rotulo: 'Coleções criadas', valor: '10' },
+  { rotulo: 'Coleções criadas', valor: '11' },
   { rotulo: 'Especialidades do CFO', valor: '25' },
   { rotulo: 'Módulos no catálogo', valor: '6' },
 ]
@@ -48,8 +48,8 @@ const Index = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Estado do projeto</CardTitle>
           <CardDescription>
-            Etapas 1 a 3 concluídas: fundação, isolamento entre CNPJs e estrutura da clínica. As
-            telas de operação chegam nas próximas etapas.
+            Etapas 1 a 4 concluídas: fundação, isolamento entre CNPJs, estrutura da clínica e
+            controle de acesso com auditoria. O cadastro de pacientes vem na etapa 5.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">

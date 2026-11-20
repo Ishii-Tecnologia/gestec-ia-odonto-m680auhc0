@@ -6,33 +6,33 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 ## Situação atual
 
-| Campo         | Valor                                                              |
-| ------------- | ------------------------------------------------------------------ |
-| Etapa atual   | 3 — Núcleo organizacional                                          |
-| Status        | concluída (build verde + 7 testes de API + conferência das regras) |
-| Próxima etapa | 4 — Acesso e auditoria                                             |
-| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)              |
-| Versão        | 0.0.12                                                             |
+| Campo         | Valor                                                  |
+| ------------- | ------------------------------------------------------ |
+| Etapa atual   | 4 — Acesso e auditoria                                 |
+| Status        | concluída (build verde + testes de API e de interface) |
+| Próxima etapa | 5 — Pacientes                                          |
+| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)  |
+| Versão        | 0.0.20                                                 |
 
 ## Etapas
 
-| #   | Etapa                   | Status    | Observação                                                                  |
-| --- | ----------------------- | --------- | --------------------------------------------------------------------------- |
-| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro  |
-| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo         |
-| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo |
-| 4   | Acesso e auditoria      | pendente  | convite, guarda de rota, `auditoria_acesso`                                 |
-| 5   | Pacientes               | pendente  | cadastro, alertas clínicos, responsável legal, anamnese versionada          |
-| 6   | Agenda                  | pendente  | `agenda_slot` com índice único por profissional e por sala                  |
-| 7   | Prontuário              | pendente  | evolução append-only, odontograma, sigilo restrito ao responsável           |
-| 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                    |
-| 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                          |
-| 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                     |
-| 11  | Financeiro gerencial    | pendente  | despesas, DRE, fluxo 90 dias, aging                                         |
-| 12  | Relatórios operacionais | pendente  | painel, faltas, produção                                                    |
-| 13  | Comunicação             | pendente  | lembretes de consulta, retorno e aniversário                                |
-| 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                    |
-| 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                               |
+| #   | Etapa                   | Status    | Observação                                                                       |
+| --- | ----------------------- | --------- | -------------------------------------------------------------------------------- |
+| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro       |
+| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo              |
+| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo      |
+| 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários |
+| 5   | Pacientes               | pendente  | cadastro, alertas clínicos, responsável legal, anamnese versionada               |
+| 6   | Agenda                  | pendente  | `agenda_slot` com índice único por profissional e por sala                       |
+| 7   | Prontuário              | pendente  | evolução append-only, odontograma, sigilo restrito ao responsável                |
+| 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                         |
+| 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                               |
+| 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                          |
+| 11  | Financeiro gerencial    | pendente  | despesas, DRE, fluxo 90 dias, aging                                              |
+| 12  | Relatórios operacionais | pendente  | painel, faltas, produção                                                         |
+| 13  | Comunicação             | pendente  | lembretes de consulta, retorno e aniversário                                     |
+| 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                         |
+| 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                                    |
 
 ## Decisões fechadas
 
@@ -69,6 +69,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | `tenant_modulo`              | por tenant  | idem unidade                                                                                                                     |
 | `usuario_profissional`       | por tenant  | vínculo usuário ↔ profissional (vínculo opcional)                                                                                |
 | `profissional_especialidade` | por tenant  | detalhe do título: instituição, data de registro no CRO                                                                          |
+| `auditoria_acesso`           | por tenant  | create do próprio tenant; leitura só proprietário/gestor; **update e delete nulos**                                              |
 
 Nenhuma regra nula fora dos catálogos globais e do `create`/`delete` de `tenant`,
 que são nulos por decisão.
@@ -77,10 +78,10 @@ que são nulos por decisão.
 
 Dois tenants fictícios, marcados com `demo = true`:
 
-| CNPJ           | Nome                  | Usuários                                                                                       |
-| -------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
-| 11222333000181 | Clinica Demo Alfa     | alfa.proprietario@demo.gestec.local (proprietario), alfa.dentista@demo.gestec.local (dentista) |
-| 44555666000172 | Consultorio Demo Beta | beta.proprietario@demo.gestec.local (proprietario)                                             |
+| CNPJ           | Nome                  | Usuários                                                                                                                                   |
+| -------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 11222333000181 | Clinica Demo Alfa     | alfa.proprietario@demo.gestec.local (proprietario), alfa.dentista@demo.gestec.local (dentista), alfa.recepcao@demo.gestec.local (recepcao) |
+| 44555666000172 | Consultorio Demo Beta | beta.proprietario@demo.gestec.local (proprietario)                                                                                         |
 
 Senha de todos: `Demo@2026!`
 
@@ -125,6 +126,34 @@ Os filhos (`unidade`, `sala`, `profissional`, `tenant_modulo`,
 | Usuário criar especialidade no catálogo                    | recusado | 403 ✔                          |
 | Alfa mover uma sala para o tenant da Beta                  | recusado | 404, sala permaneceu na Alfa ✔ |
 
+## Etapa 4 — como o acesso é controlado
+
+Três camadas, e a ordem importa:
+
+1. **Regra da coleção (servidor)** — a barreira real. Toda coleção filtra por
+   `tenant_id` e por `papel`. É o que vale mesmo se alguém chamar a API direto.
+2. **Rota protegida (cliente)** — `src/components/RotaProtegida.tsx`. Redireciona
+   se não logado, força troca de senha no primeiro acesso e mostra a tela de
+   bloqueio por papel. É conveniência, não segurança.
+3. **Rotas administrativas (hooks)** — `/backend/v1/convidar-usuario`,
+   `/backend/v1/trocar-papel`, `/backend/v1/definir-ativo`. Existem porque a
+   coleção `users` só permite cada um editar o próprio cadastro (é isso que
+   impede autopromoção), então atos sobre OUTRAS pessoas passam por aqui, com
+   verificação de papel, de tenant e registro na auditoria.
+
+### Duas falhas de segurança encontradas e fechadas
+
+1. **Token sobrevivia à desativação.** O token do PocketBase dura 5 dias e não
+   é consultado no banco a cada requisição. Desativar um usuário não bastava:
+   o token emitido antes continuava lendo dados clínicos e até renovando.
+   Comprovado em teste (3 profissionais lidos com conta já desativada).
+   Correção: a rota de ativação agora troca o `tokenKey` do usuário, o que
+   invalida na hora todos os tokens emitidos, e o refresh de conta inativa é
+   recusado no hook.
+2. **Usuário desativado podia se reativar.** A regra de update de `users`
+   permite o próprio cadastro; `ativo` não estava travado. Correção na
+   migration `0008`: `ativo` também é imutável pelo próprio usuário.
+
 ## Correções registradas
 
 - `0005`: as regras de update usavam `@request.body.tenant_id:changed`, que o
@@ -136,6 +165,25 @@ Os filhos (`unidade`, `sala`, `profissional`, `tenant_modulo`,
   `UPDATE ... WHERE campo IS NULL` da 0005 não copiaram nada e as 25
   especialidades ficaram com `vigente = false` e os módulos com valor `0`.
   Corrigido com preenchimento por valor.
+
+### Etapa 4
+
+| Teste                                   | Esperado             | Resultado                                   |
+| --------------------------------------- | -------------------- | ------------------------------------------- |
+| Login grava auditoria com IP            | linha `login` com IP | ✔ (IP real do proxy)                        |
+| Recepção entra                          | sim                  | ✔                                           |
+| Recepção lê a auditoria                 | negado               | ✔ devolve 0 registros                       |
+| Recepção abre `/prontuario` (tela)      | bloqueada            | ✔ tela "Acesso não permitido"               |
+| A negativa aparece para o proprietário  | sim                  | ✔ linha `tentativa_negada` em `/prontuario` |
+| Recepção grava no próprio tenant        | permitido            | ✔ 200                                       |
+| Recepção grava em nome de outra clínica | negado               | ✔ 400                                       |
+| Update em `auditoria_acesso`            | rejeitado            | ✔ 403                                       |
+| Delete em `auditoria_acesso`            | rejeitado            | ✔ 403                                       |
+| Recepção desativar alguém               | negado               | ✔ 403                                       |
+| Proprietário desativa dentista          | ok                   | ✔                                           |
+| Dentista desativado tenta logar         | recusado             | ✔ 400 "Conta desativada"                    |
+| Token antigo do desativado lê dados     | negado               | ✔ 0 registros                               |
+| Refresh do token do desativado          | negado               | ✔ 401                                       |
 
 ## Pendências
 
