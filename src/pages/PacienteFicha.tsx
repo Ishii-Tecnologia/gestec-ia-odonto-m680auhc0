@@ -243,14 +243,22 @@ export default function PacienteFicha() {
             {!paciente.ativo && ' · inativo'}
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => navegar(`/pacientes/${paciente.id}/editar`)}
-        >
-          <Pencil className="mr-1.5 h-3.5 w-3.5" />
-          Editar
-        </Button>
+        <div className="flex gap-2">
+          {clinico && (
+            <Button size="sm" onClick={() => navegar(`/pacientes/${paciente.id}/prontuario`)}>
+              <FileText className="mr-1.5 h-3.5 w-3.5" />
+              Prontuário
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navegar(`/pacientes/${paciente.id}/editar`)}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Editar
+          </Button>
+        </div>
       </div>
 
       {/* Faixa fixa: aparece em qualquer aba */}

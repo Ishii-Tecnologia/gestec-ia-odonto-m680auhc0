@@ -78,6 +78,14 @@ const App = () => (
 
             {/* rota clínica: recepção e financeiro são bloqueados aqui */}
             <Route
+              path="/pacientes/:id/prontuario"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <Prontuario />
+                </RotaProtegida>
+              }
+            />
+            <Route
               path="/prontuario"
               element={
                 <RotaProtegida papeis={PAPEIS_CLINICOS}>
