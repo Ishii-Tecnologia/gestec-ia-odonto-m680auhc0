@@ -99,10 +99,13 @@ routerAdd(
     if (uni && uni.getString('tenant_id') !== tenant) {
       return e.forbiddenError('Unidade nao pertence a sua clinica.')
     }
-    // Cuidado com getBool: ele devolve false tanto para `false` quanto para
-    // campo nulo/ausente. Aqui a intenção é recusar só quem foi DESATIVADO de
-    // propósito, então leio o valor bruto e comparo com false.
-    if (sala.get('ativo') === false || prof.get('ativo') === false) {
+    // Cuidado duplo aqui:
+    // 1. getBool devolve false tanto para `false` quanto para campo nulo, então
+    //    leio o valor bruto e comparo com false — só recuso quem foi
+    //    DESATIVADO de propósito.
+    // 2. O campo se chama `ativa` em sala e `ativo` nas demais (inconsistência
+    //    da Etapa 3, registrada como dívida no ESTADO.md).
+    if (sala.get('ativa') === false || prof.get('ativo') === false) {
       return e.badRequestError('Sala ou profissional inativo.')
     }
     if (pac.get('ativo') === false) {

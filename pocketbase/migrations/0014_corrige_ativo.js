@@ -1,28 +1,32 @@
-/* Migration 0014 - Preenche `ativo` nas salas (Etapa 6)
+/* Migration 0014 - Preenche o campo de situação das salas (Etapa 6)
 
    Ao testar a agenda, toda tentativa de agendar voltava "Sala ou profissional
-   inativo". Causa: as salas do piloto foram criadas na 0004, ANTES de o campo
-   `ativo` existir na tela, e ficaram com `ativo` gravado como 0/nulo. A
-   checagem `getBool('ativo') === false` as considerava inativas.
+   inativo". Causa: as salas do piloto foram criadas na 0004 e o campo de
+   situação ficou nulo; a checagem tratava nulo como desativado.
 
-   Esta migration marca como ativas as salas que nunca tiveram o campo
-   preenchido — não sobrescreve escolha de ninguém, porque campo nulo não é
-   escolha, é ausência de dado. Sala desativada de propósito continua como
-   está (ativo = 0 só aparece se alguém desativou, e o piloto não desativou).
+   ATENÇÃO ao nome do campo: `sala` usa `ativa` (feminino, "a sala está
+   ativa"), enquanto `unidade`, `profissional` e `paciente` usam `ativo`.
+   É inconsistência que eu mesmo criei na Etapa 3. Não renomeio agora porque
+   renomear campo mexe em telas já prontas por um ganho só estético; fica
+   registrado como dívida conhecida no ESTADO.md.
 
-   Aproveito para normalizar unidade e profissional pelo mesmo motivo. */
+   Preencher nulo com 1 não sobrescreve decisão de ninguém: nulo é ausência de
+   dado, não escolha. Sala que alguém desativou de propósito continua 0. */
 
 migrate(
   (app) => {
-    // Sala: campo novo em coleção antiga nasce 0. As do piloto nunca foram
-    // desativadas, então estão ativas por definição do seed.
-    app.db().newQuery('UPDATE sala SET ativo = 1 WHERE ativo IS NULL OR ativo = 0').execute()
-    app.db().newQuery('UPDATE unidade SET ativo = 1 WHERE ativo IS NULL OR ativo = 0').execute()
-    app
-      .db()
-      .newQuery('UPDATE profissional SET ativo = 1 WHERE ativo IS NULL OR ativo = 0')
-      .execute()
-    app.db().newQuery('UPDATE paciente SET ativo = 1 WHERE ativo IS NULL OR ativo = 0').execute()
+    // sala usa `ativa`
+    app.db().newQuery('UPDATE sala SET ativa = 1 WHERE ativa IS NULL OR ativa = 0').execute()
+
+    // as demais usam `ativo`
+    ;['unidade', 'profissional', 'paciente'].forEach((tabela) => {
+      try {
+        app
+          .db()
+          .newQuery('UPDATE ' + tabela + ' SET ativo = 1 WHERE ativo IS NULL OR ativo = 0')
+          .execute()
+      } catch (_) {}
+    })
   },
   (app) => {
     // Reverter não faz sentido: era ausência de dado, não decisão.
