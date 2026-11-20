@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-11-20T12:41:58.766Z",
+  "generatedAt": "2026-11-20T19:46:41.754Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "id = @request.auth.id",
-        "view": "id = @request.auth.id",
-        "create": "",
-        "update": "id = @request.auth.id",
-        "delete": "id = @request.auth.id"
+        "list": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "view": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "create": "@request.auth.id != '' && @request.auth.papel = 'proprietario' && tenant_id = @request.auth.tenant_id",
+        "update": "id = @request.auth.id && @request.body.papel:changed = false && @request.body.tenant_id:changed = false",
+        "delete": "@request.auth.id != '' && @request.auth.papel = 'proprietario' && tenant_id = @request.auth.tenant_id"
       },
       "fields": [
         {
@@ -29,19 +29,164 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tenant_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "tenant"
+        },
+        {
+          "name": "papel",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "proprietario",
+            "gestor",
+            "dentista",
+            "recepcao",
+            "financeiro"
+          ]
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "precisa_trocar_senha",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
         "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "tenant",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && id = @request.auth.tenant_id",
+        "view": "@request.auth.id != '' && id = @request.auth.tenant_id",
+        "create": null,
+        "update": "@request.auth.id != '' && id = @request.auth.tenant_id && @request.auth.papel = 'proprietario'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "cnpj",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "razao_social",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "nome_fantasia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regime_tributario",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "simples",
+            "lucro_presumido",
+            "lucro_real",
+            "mei"
+          ]
+        },
+        {
+          "name": "email_contato",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "demo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_tenant_cnpj ON tenant (cnpj)",
+        "CREATE INDEX idx_tenant_demo ON tenant (demo)"
       ]
     }
   ]
