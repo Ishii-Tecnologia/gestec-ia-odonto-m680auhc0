@@ -21,19 +21,36 @@ migrate(
       return
     }
 
-    let bruno, ana, paciente
+    let bruno, ana
     try {
       bruno = app.findAuthRecordByEmail('_pb_users_auth_', 'alfa.dentista2@demo.gestec.local')
       ana = app.findAuthRecordByEmail('_pb_users_auth_', 'alfa.dentista@demo.gestec.local')
-      // paciente com evolução registrada (a Maria, do seed da Etapa 5)
-      paciente = app.findFirstRecordByFilter('paciente', 'cpf = "11122233344"')
     } catch (_) {
       return
     }
 
-    // só faz sentido se a Ana já tiver evolução nesse paciente
+    // O paciente certo é o que TEM evolução registrada pela Ana — não um por
+    // CPF fixo. Eu errei antes: apontei para a Maria por CPF, mas a evolução
+    // de teste foi gravada na Ana Demo Costa, e a migration saía calada por
+    // não achar o que procurava.
+    let evolucao
     try {
-      app.findFirstRecordByFilter('evolucao', 'paciente_id = "' + paciente.id + '"')
+      const lista = app.findRecordsByFilter(
+        'evolucao',
+        'usuario_autor_id = "' + ana.id + '"',
+        '-created',
+        1,
+        0,
+      )
+      if (lista.length === 0) return
+      evolucao = lista[0]
+    } catch (_) {
+      return
+    }
+
+    let paciente
+    try {
+      paciente = app.findRecordById('paciente', evolucao.getString('paciente_id'))
     } catch (_) {
       return
     }
