@@ -159,30 +159,47 @@ routerAdd(
       }
 
       const texto = String(err)
-      if (texto.indexOf('UNIQUE') >= 0 || texto.indexOf('idx_slot') >= 0) {
-        // Descubro QUAL eixo colidiu, para a mensagem ser útil.
+      if (
+        texto.indexOf('unique') >= 0 ||
+        texto.indexOf('UNIQUE') >= 0 ||
+        texto.indexOf('idx_slot') >= 0
+      ) {
+        // Descubro QUAL eixo colidiu, para a mensagem ser util.
+        // Olho BLOCO A BLOCO: a colisao pode estar no meio do intervalo, nao
+        // no primeiro bloco (era o bug: eu so testava o inicio).
         let colideProf = false
         let colideSala = false
-        try {
-          $app.findFirstRecordByFilter(
-            'agenda_slot',
-            'profissional_id = "' + profissionalId + '" && inicio = "' + formatar(inicioMs) + '"',
-          )
-          colideProf = true
-        } catch (_) {}
-        try {
-          $app.findFirstRecordByFilter(
-            'agenda_slot',
-            'sala_id = "' + salaId + '" && inicio = "' + formatar(inicioMs) + '"',
-          )
-          colideSala = true
-        } catch (_) {}
+        for (let i = 0; i < quantidade; i++) {
+          const quando = formatar(inicioMs + i * BLOCO_MS)
+          if (!colideProf) {
+            try {
+              $app.findFirstRecordByFilter(
+                'agenda_slot',
+                'profissional_id = "' + profissionalId + '" && inicio = "' + quando + '"',
+              )
+              colideProf = true
+            } catch (_) {}
+          }
+          if (!colideSala) {
+            try {
+              $app.findFirstRecordByFilter(
+                'agenda_slot',
+                'sala_id = "' + salaId + '" && inicio = "' + quando + '"',
+              )
+              colideSala = true
+            } catch (_) {}
+          }
+          if (colideProf && colideSala) break
+        }
 
         let msg = 'Horario ja ocupado.'
-        if (colideProf && colideSala)
+        if (colideProf && colideSala) {
           msg = 'Horario ja ocupado para este profissional e para esta sala.'
-        else if (colideProf) msg = 'Profissional ja tem atendimento neste horario.'
-        else if (colideSala) msg = 'Sala ja esta ocupada neste horario.'
+        } else if (colideProf) {
+          msg = 'Profissional ja tem atendimento neste horario.'
+        } else if (colideSala) {
+          msg = 'Sala ja esta ocupada neste horario.'
+        }
         return e.badRequestError(msg)
       }
 
