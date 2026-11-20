@@ -123,7 +123,14 @@ export default function Usuarios() {
     setErro('')
     setAviso('')
     try {
-      await pb.collection('users').update(m.id, { ativo: !m.ativo })
+      // A coleção users só deixa cada um editar o próprio cadastro, e `ativo`
+      // é imutável por ali (senão o desativado se reativaria sozinho).
+      // Ativar/desativar passa pela rota, que confere quem pede.
+      await pb.send('/backend/v1/definir-ativo', {
+        method: 'POST',
+        body: { usuario_id: m.id, ativo: !m.ativo },
+      })
+      setAviso(`${m.nome} agora está ${m.ativo ? 'desativado' : 'ativo'}.`)
       await carregar()
     } catch (err) {
       setErro(getErrorMessage(err))
