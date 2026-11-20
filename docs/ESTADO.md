@@ -8,11 +8,11 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
-| Etapa atual   | 7 — Prontuário                                                  |
-| Status        | concluída (build verde + 4 critérios testados na API e na tela) |
-| Próxima etapa | 8 — Catálogo e preços                                           |
+| Etapa atual   | 8 — Catálogo e preços                                           |
+| Status        | concluída (build verde + 3 critérios testados na API e na tela) |
+| Próxima etapa | 9 — Orçamento, plano versionado e execução                      |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
-| Versão        | 0.0.45                                                          |
+| Versão        | 0.0.50                                                          |
 
 ## Etapas
 
@@ -25,6 +25,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 5   | Pacientes               | concluída | cadastro, alertas clínicos com faixa de destaque, responsável legal, anamnese versionada |
 | 6   | Agenda                  | concluída | `agenda_slot` com UNIQUE por profissional e por sala; 4 critérios provados               |
 | 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário        |
+| 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar            |
 | 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
 | 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
 | 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
@@ -277,6 +278,43 @@ comparação direta — que vale até para chamada de API fora do app.
 | Retificar cria registro novo                       | sim                 | ✔ v1 e retificação convivem                                           |
 | Original permanece intacto                         | texto e hash iguais | ✔                                                                     |
 | Ações na auditoria                                 | as três             | ✔ ver_prontuario, editar_prontuario, revogar_acesso, tentativa_negada |
+
+## Etapa 8 — como o preço é resolvido
+
+Rota `GET /backend/v1/resolver-preco?paciente_id=X[&procedimento_id=Y]`. A
+resolução fica no servidor porque depende de qual tabela está vigente **hoje**,
+e "hoje" não é expressável em access rule.
+
+**O fallback é por PROCEDIMENTO, não por tabela.** Eu escrevi errado na primeira
+versão: se não houvesse tabela do convênio, usava a particular; e quando havia
+tabela do convênio sem aquele item, o paciente ficava **sem preço**. O caso real
+é o convênio cobrir a maioria e não cobrir alguns itens (estética, selante).
+Agora cada procedimento resolve o próprio preço e a resposta diz em
+`itens_no_particular` quais caíram no particular.
+
+- `paciente.convenio_id` (novo, opcional): nulo = particular. É só a chave que
+  escolhe a tabela — **não** é faturamento de convênio (fora do escopo).
+- Dinheiro em **centavos inteiros** (`valor_centavos`), nunca float.
+- `procedimento.codigo` é **UNIQUE por tenant**; `tabela_preco_item` é
+  **UNIQUE por (tabela, procedimento)**.
+- Sobreposição de vigência não é expressável em índice (intervalo não cabe em
+  UNIQUE). Fica na rota `POST /backend/v1/salvar-tabela-preco`, que recusa e
+  explica como corrigir. Períodos que **não** se cruzam são o jeito correto de
+  registrar reajuste.
+
+### Etapa 8 — testes
+
+| Teste                                      | Esperado                     | Resultado                                      |
+| ------------------------------------------ | ---------------------------- | ---------------------------------------------- |
+| 10 procedimentos com preço em duas tabelas | sim                          | ✔ 10 procs, 10 itens particular, 8 no convênio |
+| Preço muda entre particular e convênio     | sim                          | ✔ 8 dos 10 mudam                               |
+| Item fora do convênio cai no particular    | preço existe                 | ✔ PROF-009/010                                 |
+| CSV com 1 linha inválida                   | erro por linha, nada gravado | ✔ 1 erro na linha 4, total 10 → 10             |
+| Código já existente / repetido no arquivo  | recusa                       | ✔ duas linhas com problema                     |
+| CSV válido sem confirmar                   | não grava                    | ✔ validou 2, banco 10 → 10                     |
+| CSV válido confirmando                     | grava                        | ✔ 2 gravados, banco 12                         |
+| Tabela sobrepondo vigência                 | recusada                     | ✔ 400 com instrução                            |
+| Fechar anterior e abrir nova               | aceita                       | ✔ 200                                          |
 
 ## Pendências
 
