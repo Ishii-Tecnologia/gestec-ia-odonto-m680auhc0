@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T21:46:32.102Z",
+  "generatedAt": "2026-11-20T21:53:07.971Z",
   "collections": [
     {
       "name": "users",
@@ -903,7 +903,9 @@
             "convite_usuario",
             "ativar_usuario",
             "desativar_usuario",
-            "trocar_papel"
+            "trocar_papel",
+            "conceder_acesso",
+            "revogar_acesso"
           ]
         },
         {
