@@ -6,13 +6,13 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 ## Situação atual
 
-| Campo         | Valor                                                  |
-| ------------- | ------------------------------------------------------ |
-| Etapa atual   | 5 — Pacientes                                          |
-| Status        | concluída (build verde + testes de API e de interface) |
-| Próxima etapa | 6 — Agenda                                             |
-| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)  |
-| Versão        | 0.0.29                                                 |
+| Campo         | Valor                                                           |
+| ------------- | --------------------------------------------------------------- |
+| Etapa atual   | 7 — Prontuário                                                  |
+| Status        | concluída (build verde + 4 critérios testados na API e na tela) |
+| Próxima etapa | 8 — Catálogo e preços                                           |
+| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
+| Versão        | 0.0.45                                                          |
 
 ## Etapas
 
@@ -23,8 +23,8 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo              |
 | 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários         |
 | 5   | Pacientes               | concluída | cadastro, alertas clínicos com faixa de destaque, responsável legal, anamnese versionada |
-| 6   | Agenda                  | pendente  | `agenda_slot` com índice único por profissional e por sala                               |
-| 7   | Prontuário              | pendente  | evolução append-only, odontograma, sigilo restrito ao responsável                        |
+| 6   | Agenda                  | concluída | `agenda_slot` com UNIQUE por profissional e por sala; 4 critérios provados               |
+| 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário        |
 | 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
 | 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
 | 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
@@ -226,6 +226,57 @@ Três camadas, e a ordem importa:
 | **Beta cria anamnese para paciente da Alfa** | negado                | **✘ vazamento → corrigido na 0.0.28, agora 400** |
 | Beta cria alerta para paciente da Alfa       | negado                | ✔ 400 (após correção)                            |
 | Beta cria responsável para paciente da Alfa  | negado                | ✔ 400 (após correção)                            |
+
+## Etapa 6 — como o conflito de agenda é impedido
+
+SQLite não tem `EXCLUDE`, então a garantia vem de **índice UNIQUE**, não de
+validação de tela:
+
+- `agenda_slot` tem `CREATE UNIQUE INDEX idx_slot_prof ON (profissional_id, inicio)`
+  e `idx_slot_sala ON (sala_id, inicio)`. Um slot por bloco de 15 min, com
+  **ambos** os campos na mesma linha: um único INSERT colide nos dois eixos.
+- `agendamento` e `bloqueio_agenda` têm `createRule`/`updateRule` **nulos**.
+  A única porta é `/backend/v1/agendar`, que grava slots e agendamento juntos.
+  Sem isso, alguém criaria agendamento sem slots e o horário ficaria "livre".
+
+Testado: 3 pedidos simultâneos no mesmo bloco → 1 aceito, 2 recusados, 1 slot
+no banco. Reagendar libera o antigo e não deixa órfão (checado: 0 órfãos).
+
+## Etapa 7 — sigilo do prontuário
+
+Decisão central: `evolucao` e `odontograma_snapshot` guardam **`usuario_autor_id`**
+(o usuário que registrou, fixado pelo token). A regra de leitura é
+`usuario_autor_id = @request.auth.id`.
+
+Motivo de denormalizar: a access rule do PocketBase **não consulta outra
+coleção**, então não há como escrever "o profissional deste registro é o
+vinculado a mim". Gravar o vínculo resolvido no registro torna a regra uma
+comparação direta — que vale até para chamada de API fora do app.
+
+- **Proprietário e gestor NÃO têm leitura clínica automática.** Administram a
+  clínica, mas não leem prontuário de paciente que não acompanham.
+- Acesso de outro profissional só por `acesso_prontuario`, temporário e com
+  justificativa, concedido por quem já tem acesso (a rota confere isso).
+- **A expiração é conferida na rota de leitura, a cada acesso** — não na regra
+  (que não compara data). Provado: acesso com `ativo = true` e `expira_em` no
+  passado recebe 403.
+- Retificação cria registro novo com `referencia_evolucao_id` e motivo; o
+  original fica intacto (texto e hash conferidos após a retificação).
+- Cadeia de hash: cada registro guarda `hash_anterior` + `hash_registro`. Não é
+  criptografia forte contra quem tem o banco: é **detecção de alteração**.
+
+### Etapa 7 — testes
+
+| Teste                                              | Esperado            | Resultado                                                             |
+| -------------------------------------------------- | ------------------- | --------------------------------------------------------------------- |
+| Dentista B lê prontuário do paciente da dentista A | negado              | ✔ 403 na rota, 0 registros na coleção                                 |
+| B lê a coleção `evolucao` direto                   | 0 registros         | ✔                                                                     |
+| Acesso temporário ativo → B lê                     | permitido           | ✔ título "temporario"                                                 |
+| Acesso com `ativo=true` mas expirado → B lê        | negado              | ✔ 403                                                                 |
+| Proprietário (não responsável) lê                  | negado              | ✔ 403                                                                 |
+| Retificar cria registro novo                       | sim                 | ✔ v1 e retificação convivem                                           |
+| Original permanece intacto                         | texto e hash iguais | ✔                                                                     |
+| Ações na auditoria                                 | as três             | ✔ ver_prontuario, editar_prontuario, revogar_acesso, tentativa_negada |
 
 ## Pendências
 
