@@ -70,19 +70,25 @@ export default function Pacientes() {
         })
         const pacientes = lista.map(deRegistro)
 
-        // alertas de todos os pacientes listados, numa consulta só
+        // Alertas de todos os pacientes listados.
+        // Tentei antes uma consulta só com `paciente_id ?~ ("id1","id2")`;
+        // o PocketBase recusou esse formato com 400. Trazer todos os alertas
+        // ativos do tenant e agrupar aqui é mais simples e não falha.
         let alertasPorPaciente: Record<string, Alerta[]> = {}
-        if (pacientes.length > 0) {
-          const ids = pacientes.map((p) => `"${p.id}"`).join(',')
+        try {
           const alertas = await pb.collection('alerta_clinico').getFullList({
-            filter: `tenant_id = "${sessao.tenantId}" && paciente_id ?~ (${ids}) && ativo = true`,
+            filter: `tenant_id = "${sessao.tenantId}" && ativo = true`,
           })
-          alertasPorPaciente = alertas.reduce<Record<string, Alerta[]>>((acc, r) => {
+          const visiveis = new Set(pacientes.map((p) => p.id))
+          for (const r of alertas) {
             const a = alertaDeRegistro(r)
-            if (!acc[a.pacienteId]) acc[a.pacienteId] = []
-            acc[a.pacienteId].push(a)
-            return acc
-          }, {})
+            if (!visiveis.has(a.pacienteId)) continue
+            if (!alertasPorPaciente[a.pacienteId]) alertasPorPaciente[a.pacienteId] = []
+            alertasPorPaciente[a.pacienteId].push(a)
+          }
+        } catch (_) {
+          // Sem alertas a lista ainda é útil: não derruba a tela.
+          alertasPorPaciente = {}
         }
 
         setLinhas(pacientes.map((p) => ({ paciente: p, alertas: alertasPorPaciente[p.id] || [] })))
