@@ -32,7 +32,7 @@ export default function Layout() {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <UserRound className="h-4 w-4" />
-          <span>Sessão não iniciada</span>
+          <span>Ambiente de demonstração</span>
         </div>
       </header>
 

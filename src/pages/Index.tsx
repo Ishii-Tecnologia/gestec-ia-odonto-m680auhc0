@@ -1,16 +1,35 @@
-/* Home Page - pagina inicial do GesTec-IA-Odonto (Etapa 1: fundacao).
-   Identidade do produto e estado atual do projeto, para conferir que a base
-   esta de pe. Sem funcionalidade de negocio. */
+/* Home Page - pagina inicial do GesTec-IA-Odonto.
+   Reflete o estado real do projeto (ver docs/ESTADO.md). Ao concluir uma etapa,
+   atualizar as listas abaixo junto com o registro de estado. */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Logo } from '@/components/Logo'
 import { BRAND } from '@/lib/brand'
 
-const ETAPAS = [
-  { numero: 1, titulo: 'Fundação', concluida: true },
-  { numero: 2, titulo: 'Identidade e isolamento', concluida: false },
+type Status = 'concluida' | 'proxima' | 'pendente'
+
+const ETAPAS: Array<{ numero: number; titulo: string; status: Status }> = [
+  { numero: 1, titulo: 'Fundação', status: 'concluida' },
+  { numero: 2, titulo: 'Identidade e isolamento', status: 'concluida' },
+  { numero: 3, titulo: 'Núcleo organizacional', status: 'concluida' },
+  { numero: 4, titulo: 'Acesso e auditoria', status: 'proxima' },
+  { numero: 5, titulo: 'Pacientes', status: 'pendente' },
+  { numero: 6, titulo: 'Agenda', status: 'pendente' },
 ]
+
+const RESUMO: Array<{ rotulo: string; valor: string }> = [
+  { rotulo: 'Backend e banco', valor: 'Skip Cloud (PocketBase)' },
+  { rotulo: 'Coleções criadas', valor: '10' },
+  { rotulo: 'Especialidades do CFO', valor: '25' },
+  { rotulo: 'Módulos no catálogo', valor: '6' },
+]
+
+const ROTULO: Record<Status, string> = {
+  concluida: 'concluída',
+  proxima: 'próxima',
+  pendente: 'pendente',
+}
 
 const Index = () => {
   return (
@@ -27,25 +46,26 @@ const Index = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Etapa 1 &mdash; Fundação</CardTitle>
+          <CardTitle className="text-base">Estado do projeto</CardTitle>
           <CardDescription>
-            Base do projeto pronta: cliente de dados, layout e registro de estado. Nenhuma regra de
-            negócio foi criada nesta etapa.
+            Etapas 1 a 3 concluídas: fundação, isolamento entre CNPJs e estrutura da clínica. As
+            telas de operação chegam nas próximas etapas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div className="flex items-center justify-between gap-4 border-b pb-2">
-            <span className="text-muted-foreground">Backend e banco</span>
-            <span>Skip Cloud (PocketBase)</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 border-b pb-2">
-            <span className="text-muted-foreground">Coleções criadas</span>
-            <span>0</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-muted-foreground">Próxima etapa</span>
-            <span>2 &mdash; Identidade e isolamento</span>
-          </div>
+          {RESUMO.map((linha, i) => (
+            <div
+              key={linha.rotulo}
+              className={
+                i < RESUMO.length - 1
+                  ? 'flex items-center justify-between gap-4 border-b pb-2'
+                  : 'flex items-center justify-between gap-4'
+              }
+            >
+              <span className="text-muted-foreground">{linha.rotulo}</span>
+              <span className="font-medium">{linha.valor}</span>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -60,8 +80,8 @@ const Index = () => {
               <span>
                 {etapa.numero} &mdash; {etapa.titulo}
               </span>
-              <Badge variant={etapa.concluida ? 'default' : 'outline'}>
-                {etapa.concluida ? 'concluída' : 'próxima'}
+              <Badge variant={etapa.status === 'concluida' ? 'default' : 'outline'}>
+                {ROTULO[etapa.status]}
               </Badge>
             </li>
           ))}
