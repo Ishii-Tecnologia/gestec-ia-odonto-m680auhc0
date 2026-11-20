@@ -87,14 +87,11 @@ migrate(
           maxSelect: 1,
           values: ['proposto', 'aprovado', 'em_execucao', 'concluido', 'cancelado'],
         },
-        // cadeia de versões: v2 aponta para v1
-        {
-          name: 'plano_anterior_id',
-          type: 'relation',
-          collectionId: null, // preenchido abaixo, após criar a coleção
-          maxSelect: 1,
-          cascadeDelete: false,
-        },
+        /* `plano_anterior_id` (cadeia de versões) NÃO entra aqui: ele aponta
+           para a própria coleção, que ainda não tem id antes do primeiro save.
+           PocketBase recusa relation com collectionId vazio ("cannot be
+           blank"), então o campo é adicionado logo depois, com o id já
+           conhecido. Foi o erro da primeira tentativa. */
         { name: 'observacoes', type: 'text', max: 2000 },
         {
           name: 'created_by',
@@ -115,8 +112,14 @@ migrate(
 
     // autorrelação: só dá para apontar para si mesma depois de existir
     const colPlano = app.findCollectionByNameOrId('plano_tratamento')
-    const campoAnterior = colPlano.fields.getByName('plano_anterior_id')
-    campoAnterior.collectionId = colPlano.id
+    colPlano.fields.add(
+      new RelationField({
+        name: 'plano_anterior_id',
+        collectionId: colPlano.id,
+        maxSelect: 1,
+        cascadeDelete: false,
+      }),
+    )
     app.save(colPlano)
 
     // ---------- fase ----------
@@ -219,13 +222,8 @@ migrate(
           maxSelect: 1,
           values: ['proposto', 'executado', 'substituido', 'cancelado'],
         },
-        {
-          name: 'substituido_por_item_id',
-          type: 'relation',
-          collectionId: null, // autorreferência, preenchida abaixo
-          maxSelect: 1,
-          cascadeDelete: false,
-        },
+        // `substituido_por_item_id` também é autorreferência: entra depois do
+        // primeiro save, pelo mesmo motivo de plano_anterior_id.
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
@@ -238,8 +236,14 @@ migrate(
     app.save(item)
 
     const colItem = app.findCollectionByNameOrId('item_tratamento')
-    const campoSub = colItem.fields.getByName('substituido_por_item_id')
-    campoSub.collectionId = colItem.id
+    colItem.fields.add(
+      new RelationField({
+        name: 'substituido_por_item_id',
+        collectionId: colItem.id,
+        maxSelect: 1,
+        cascadeDelete: false,
+      }),
+    )
     app.save(colItem)
 
     // ---------- orcamento ----------
