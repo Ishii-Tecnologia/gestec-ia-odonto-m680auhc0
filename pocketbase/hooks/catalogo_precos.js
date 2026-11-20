@@ -108,19 +108,65 @@ routerAdd(
       })
     }
 
-    let itens = []
-    try {
+    function itensDa(tabelaId) {
       const filtro =
         'tabela_preco_id = "' +
-        tabela.id +
+        tabelaId +
         '"' +
         (procedimentoId ? ' && procedimento_id = "' + procedimentoId + '"' : '')
-      const lista = $app.findRecordsByFilter('tabela_preco_item', filtro, '', 500, 0)
-      itens = lista.map((i) => ({
-        procedimento_id: i.getString('procedimento_id'),
-        valor_centavos: i.getInt('valor_centavos'),
-      }))
-    } catch (_) {}
+      try {
+        const lista = $app.findRecordsByFilter('tabela_preco_item', filtro, '', 500, 0)
+        return lista.map((i) => ({
+          procedimento_id: i.getString('procedimento_id'),
+          valor_centavos: i.getInt('valor_centavos'),
+        }))
+      } catch (_) {
+        return []
+      }
+    }
+
+    /* O FALLBACK É POR PROCEDIMENTO, NÃO POR TABELA — e essa distinção é a
+       decisão mais importante desta rota.
+
+       Eu tinha escrito o fallback no nível da tabela: se não houvesse tabela do
+       convênio vigente, usava a particular. Parece razoável e está errado. O
+       caso comum na clínica é o convênio cobrir a maioria dos procedimentos e
+       NÃO cobrir alguns (estética, selante, clareamento). Com o fallback no
+       nível da tabela, o paciente de convênio ficava SEM PREÇO nesses itens —
+       e a recepção não tem o que cobrar, mesmo havendo preço particular
+       cadastrado.
+
+       Regra correta: cada procedimento resolve o próprio preço. O que não
+       estiver na tabela do convênio cai no particular, item a item, e a
+       resposta diz QUAL item caiu. */
+
+    const doConvenio = itensDa(tabela.id)
+    const marcados = {}
+    for (const i of doConvenio) marcados[i.procedimento_id] = true
+
+    let itens = doConvenio.map((i) => ({
+      procedimento_id: i.procedimento_id,
+      valor_centavos: i.valor_centavos,
+      de: origem === 'convenio' ? 'convenio' : 'particular',
+    }))
+
+    // completa com o particular o que o convênio não cobre
+    let caiuNoParticular = []
+    if (origem === 'convenio') {
+      const tabelaParticular = vigentes('convenio_id = ""')
+      if (tabelaParticular.length > 0) {
+        const doParticular = itensDa(tabelaParticular[0].id)
+        for (const i of doParticular) {
+          if (marcados[i.procedimento_id]) continue
+          itens.push({
+            procedimento_id: i.procedimento_id,
+            valor_centavos: i.valor_centavos,
+            de: 'particular',
+          })
+          caiuNoParticular.push(i.procedimento_id)
+        }
+      }
+    }
 
     return e.json(200, {
       paciente_id: pacienteId,
@@ -138,6 +184,8 @@ routerAdd(
           ? 'Paciente tem convenio, mas nao ha tabela vigente para ele. Aplicado o preco particular.'
           : '',
       itens: itens,
+      // itens que o convenio nao cobre e por isso usam o preco particular
+      itens_no_particular: caiuNoParticular,
     })
   },
   $apis.requireAuth(),
