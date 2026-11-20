@@ -185,7 +185,22 @@ export default function Prontuario() {
           sort: 'nome',
         })
         setProfissionais(profs.map((p) => ({ id: p.id, nome: p.nome as string })))
-        if (profs.length > 0) setProfissionalId((atual) => atual || profs[0].id)
+
+        // O padrão tem de ser o profissional VINCULADO a quem está logado.
+        // Antes eu pegava simplesmente o primeiro da lista, e o registro saía
+        // assinado por outro dentista — erro grave num prontuário, porque
+        // atribui a conduta a quem não a fez.
+        let padrao = ''
+        try {
+          const vinculos = await pb.collection('usuario_profissional').getFullList({
+            filter: `usuario_id = "${sessao.id}"`,
+          })
+          if (vinculos.length > 0) padrao = vinculos[0].profissional_id as string
+        } catch {
+          /* sem vínculo */
+        }
+        if (!padrao && profs.length > 0) padrao = profs[0].id
+        setProfissionalId((atual) => atual || padrao)
       } catch {
         /* nada */
       }
