@@ -14,6 +14,9 @@ import TrocarSenha from './pages/TrocarSenha'
 import Usuarios from './pages/Usuarios'
 import Auditoria from './pages/Auditoria'
 import Prontuario from './pages/Prontuario'
+import Pacientes from './pages/Pacientes'
+import PacienteForm from './pages/PacienteForm'
+import PacienteFicha from './pages/PacienteFicha'
 import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -63,6 +66,12 @@ const App = () => (
                 </RotaProtegida>
               }
             />
+            {/* pacientes: cadastro é da recepção também */}
+            <Route path="/pacientes" element={<Pacientes />} />
+            <Route path="/pacientes/novo" element={<PacienteForm />} />
+            <Route path="/pacientes/:id" element={<PacienteFicha />} />
+            <Route path="/pacientes/:id/editar" element={<PacienteForm />} />
+
             {/* rota clínica: recepção e financeiro são bloqueados aqui */}
             <Route
               path="/prontuario"
