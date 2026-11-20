@@ -99,10 +99,13 @@ routerAdd(
     if (uni && uni.getString('tenant_id') !== tenant) {
       return e.forbiddenError('Unidade nao pertence a sua clinica.')
     }
-    if (sala.getBool('ativo') === false || prof.getBool('ativo') === false) {
+    // Cuidado com getBool: ele devolve false tanto para `false` quanto para
+    // campo nulo/ausente. Aqui a intenção é recusar só quem foi DESATIVADO de
+    // propósito, então leio o valor bruto e comparo com false.
+    if (sala.get('ativo') === false || prof.get('ativo') === false) {
       return e.badRequestError('Sala ou profissional inativo.')
     }
-    if (pac.getBool('ativo') === false) {
+    if (pac.get('ativo') === false) {
       return e.badRequestError('Paciente inativo.')
     }
 
