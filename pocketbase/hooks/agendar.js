@@ -113,6 +113,17 @@ routerAdd(
     }
 
     // ---- calcula inicio e blocos ----
+    // EXIGE fuso explicito. Sem fuso, "2026-11-20T08:00:00" e lido como UTC
+    // pelo servidor enquanto o chamador quis dizer 08:00 locais — o
+    // agendamento sai 3 horas errado e ninguem percebe, porque a tela mostra
+    // o que o banco tem. Ja aconteceu (com um script meu). Recusar cedo e
+    // melhor que aceitar um horario ambiguo.
+    if (!/[zZ]$|[+-]\d{2}:?\d{2}$/.test(inicioTexto)) {
+      return e.badRequestError(
+        'Horario sem fuso horario. Envie o instante com offset (ex.: 2026-11-20T08:00:00-03:00).',
+      )
+    }
+
     const inicioMs = Date.parse(inicioTexto)
     if (isNaN(inicioMs)) return e.badRequestError('Horario invalido.')
     if (inicioMs < Date.now() - 24 * 60 * 60 * 1000) {

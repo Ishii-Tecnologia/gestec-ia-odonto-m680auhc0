@@ -146,12 +146,10 @@ export default function Agenda() {
         pb
           .collection('sala')
           .getFullList({ filter: `tenant_id = "${sessao.tenantId}"`, sort: 'nome' }),
-        pb
-          .collection('paciente')
-          .getFullList({
-            filter: `tenant_id = "${sessao.tenantId}" && ativo = true`,
-            sort: 'nome',
-          }),
+        pb.collection('paciente').getFullList({
+          filter: `tenant_id = "${sessao.tenantId}" && ativo = true`,
+          sort: 'nome',
+        }),
       ])
       setProfissionais(ps.map((r) => ({ id: r.id, nome: r.nome as string })))
       setSalas(ss.map((r) => ({ id: r.id, nome: r.nome as string })))
