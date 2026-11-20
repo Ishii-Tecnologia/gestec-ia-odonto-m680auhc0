@@ -13,6 +13,8 @@ import Entrar from './pages/Entrar'
 import TrocarSenha from './pages/TrocarSenha'
 import Usuarios from './pages/Usuarios'
 import Auditoria from './pages/Auditoria'
+import Prontuario from './pages/Prontuario'
+import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
 
@@ -58,6 +60,15 @@ const App = () => (
               element={
                 <RotaProtegida exigeAuditoria>
                   <Auditoria />
+                </RotaProtegida>
+              }
+            />
+            {/* rota clínica: recepção e financeiro são bloqueados aqui */}
+            <Route
+              path="/prontuario"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <Prontuario />
                 </RotaProtegida>
               }
             />
