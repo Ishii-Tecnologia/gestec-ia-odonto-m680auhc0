@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T19:55:57.433Z",
+  "generatedAt": "2026-11-20T19:59:01.659Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "nome",
@@ -56,7 +61,13 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["proprietario", "gestor", "dentista", "recepcao", "financeiro"]
+          "selectValues": [
+            "proprietario",
+            "gestor",
+            "dentista",
+            "recepcao",
+            "financeiro"
+          ]
         },
         {
           "name": "ativo",
@@ -122,7 +133,12 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["simples", "lucro_presumido", "lucro_real", "mei"]
+          "selectValues": [
+            "simples",
+            "lucro_presumido",
+            "lucro_real",
+            "mei"
+          ]
         },
         {
           "name": "email_contato",
@@ -153,14 +169,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -257,17 +278,36 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "horario_abertura",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "horario_fechamento",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_unidade_tenant_nome ON unidade (tenant_id, nome)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_unidade_tenant_nome ON unidade (tenant_id, nome)"
+      ]
     },
     {
       "name": "especialidade",
@@ -293,20 +333,8 @@
           "system": false
         },
         {
-          "name": "norma",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
           "name": "ordem",
           "type": "number",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "ativa",
-          "type": "bool",
           "required": false,
           "system": false
         },
@@ -315,17 +343,36 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "norma_origem",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vigente",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_especialidade_codigo ON especialidade (codigo)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_especialidade_codigo ON especialidade (codigo)"
+      ]
     },
     {
       "name": "sala",
@@ -363,7 +410,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["cadeira", "consultorio", "cirurgico", "laboratorio"]
+          "selectValues": [
+            "consultorio",
+            "raio_x",
+            "esterilizacao"
+          ]
         },
         {
           "name": "ativa",
@@ -376,17 +427,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_sala_unidade_nome ON sala (tenant_id, unidade_id, nome)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_sala_unidade_nome ON sala (tenant_id, unidade_id, nome)"
+      ]
     },
     {
       "name": "profissional",
@@ -480,14 +538,37 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "tipo_vinculo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "assalariado",
+            "comissionado",
+            "locatario",
+            "socio"
+          ]
+        },
+        {
+          "name": "percentual_repasse",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -546,17 +627,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_modulo_codigo ON modulo (codigo)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_modulo_codigo ON modulo (codigo)"
+      ]
     },
     {
       "name": "tenant_modulo",
@@ -588,13 +676,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["ativo", "suspenso", "cancelado"]
-        },
-        {
-          "name": "preco_centavos",
-          "type": "number",
-          "required": false,
-          "system": false
+          "selectValues": [
+            "ativo",
+            "suspenso",
+            "cancelado"
+          ]
         },
         {
           "name": "contratado_em",
@@ -613,19 +699,160 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        },
+        {
+          "name": "valor_mensal_centavos",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_tenant_modulo ON tenant_modulo (tenant_id, modulo_id)",
         "CREATE INDEX idx_tenant_modulo_status ON tenant_modulo (tenant_id, status)"
+      ]
+    },
+    {
+      "name": "usuario_profissional",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "view": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "create": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && (@request.auth.papel = 'proprietario' || @request.auth.papel = 'gestor')",
+        "update": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && (@request.auth.papel = 'proprietario' || @request.auth.papel = 'gestor')",
+        "delete": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && @request.auth.papel = 'proprietario'"
+      },
+      "fields": [
+        {
+          "name": "tenant_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "tenant"
+        },
+        {
+          "name": "usuario_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "profissional_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "profissional"
+        },
+        {
+          "name": "principal",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_usuario_profissional ON usuario_profissional (tenant_id, usuario_id, profissional_id)"
+      ]
+    },
+    {
+      "name": "profissional_especialidade",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "view": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
+        "create": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && (@request.auth.papel = 'proprietario' || @request.auth.papel = 'gestor')",
+        "update": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && (@request.auth.papel = 'proprietario' || @request.auth.papel = 'gestor')",
+        "delete": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && @request.auth.papel = 'proprietario'"
+      },
+      "fields": [
+        {
+          "name": "tenant_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "tenant"
+        },
+        {
+          "name": "profissional_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "profissional"
+        },
+        {
+          "name": "especialidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "especialidade"
+        },
+        {
+          "name": "instituicao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_registro_cro",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_prof_esp ON profissional_especialidade (profissional_id, especialidade_id)"
       ]
     }
   ]
