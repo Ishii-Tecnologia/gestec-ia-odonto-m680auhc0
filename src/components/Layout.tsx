@@ -30,6 +30,8 @@ import {
   Mail,
   Package,
   BellRing,
+  Handshake,
+  Layers,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -67,11 +69,20 @@ const ITENS: ItemMenu[] = [
   { label: 'Pacientes', to: '/pacientes', icone: Contact, visivel: () => true },
   { label: 'Catálogo', to: '/catalogo', icone: BookOpen, visivel: () => true },
   { label: 'Tabelas de preço', to: '/tabelas-preco', icone: Tags, visivel: () => true },
+  /* Convênio fica junto de preço porque é a mesma decisão: quem paga quanto.
+     Centro de custo fica junto de despesa, onde é usado. */
+  { label: 'Convênios', to: '/convenios', icone: Handshake, visivel: () => true },
   { label: 'Contas a receber', to: '/contas-receber', icone: Banknote, visivel: () => true },
   {
     label: 'Despesas',
     to: '/despesas',
     icone: Receipt,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
+  {
+    label: 'Centros de custo',
+    to: '/centros-custo',
+    icone: Layers,
     visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
   },
   {

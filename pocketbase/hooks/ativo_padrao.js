@@ -36,6 +36,11 @@ onRecordCreateRequest(
     } catch (_) {
       mandou = false
     }
+    /* `convenio` e `centro_custo` entraram aqui junto com as telas deles
+       (21/11/2026). Mesma armadilha: criado sem o campo, nasce `false`, some da
+       lista de escolha no lançamento, e o usuário cadastra sem conseguir usar —
+       sem mensagem alguma explicando. Tratar a classe inteira de uma vez custa
+       uma linha; descobrir coleção por coleção custa um chamado por vez. */
     if (!mandou) {
       e.record.set('ativo', true)
     }
@@ -44,6 +49,8 @@ onRecordCreateRequest(
   'paciente',
   'profissional',
   'users',
+  'convenio',
+  'centro_custo',
 )
 
 /* `sala` usa `ativa` (feminino) — inconsistência da Etapa 3, registrada como
