@@ -320,13 +320,28 @@ export default function FluxoCaixa() {
               </text>
 
               <path d={grafico.area} fill="url(#areaGrad)" />
+
+              {/* realizado: linha cheia */}
               <polyline
-                points={grafico.pontos}
+                points={grafico.pontosRealizado}
                 fill="none"
                 stroke="rgb(16 185 129)"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinejoin="round"
               />
+
+              {/* projetado: tracejado, com opacidade menor */}
+              {grafico.pontosProjetado && (
+                <polyline
+                  points={grafico.pontosProjetado}
+                  fill="none"
+                  stroke="rgb(16 185 129)"
+                  strokeWidth="2"
+                  strokeDasharray="5 4"
+                  strokeOpacity="0.55"
+                  strokeLinejoin="round"
+                />
+              )}
 
               {/* marcador do primeiro dia abaixo do mínimo */}
               {grafico.indiceAlerta >= 0 && (
@@ -338,22 +353,19 @@ export default function FluxoCaixa() {
                 />
               )}
 
-              {/* divisória hoje */}
-              {(() => {
-                const idx = dados.serie.findIndex((s) => !s.passado)
-                if (idx <= 0) return null
-                return (
-                  <line
-                    x1={grafico.x(idx)}
-                    y1="0"
-                    x2={grafico.x(idx)}
-                    y2={grafico.H}
-                    stroke="currentColor"
-                    strokeOpacity="0.2"
-                    strokeWidth="1"
-                  />
-                )
-              })()}
+              {/* divisória hoje — usa o MESMO ponto de corte dos traços, senão a
+                  linha vertical não bate com onde a linha muda de estilo */}
+              {grafico.idxCorte > 0 && (
+                <line
+                  x1={grafico.x(grafico.idxCorte)}
+                  y1="0"
+                  x2={grafico.x(grafico.idxCorte)}
+                  y2={grafico.H}
+                  stroke="currentColor"
+                  strokeOpacity="0.25"
+                  strokeWidth="1"
+                />
+              )}
             </svg>
             <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
               <span>{dataBr(dados.serie[0].data)}</span>
