@@ -31,6 +31,7 @@ import Despesas from './pages/Despesas'
 import Painel from './pages/Painel'
 import FaltasProducao from './pages/FaltasProducao'
 import Seguranca from './pages/Seguranca'
+import ModelosMensagem from './pages/ModelosMensagem'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -115,6 +116,16 @@ const App = () => (
               element={
                 <RotaProtegida>
                   <Seguranca />
+                </RotaProtegida>
+              }
+            />
+
+            {/* modelos de mensagem: só quem administra a clínica */}
+            <Route
+              path="/mensagens"
+              element={
+                <RotaProtegida papeis={PAPEIS_GESTAO}>
+                  <ModelosMensagem />
                 </RotaProtegida>
               }
             />

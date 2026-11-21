@@ -27,6 +27,7 @@ import {
   Activity,
   LayoutDashboard,
   ShieldCheck,
+  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -93,6 +94,12 @@ const ITENS: ItemMenu[] = [
     to: '/seguranca',
     icone: ShieldCheck,
     visivel: () => true,
+  },
+  {
+    label: 'Mensagens',
+    to: '/mensagens',
+    icone: Mail,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
   },
   {
     label: 'Passivo clínico',
