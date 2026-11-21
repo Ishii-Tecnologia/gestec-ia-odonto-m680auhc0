@@ -48,9 +48,14 @@ export default function Bloqueado({ papel, rota }: Props) {
             <ShieldAlert className="h-5 w-5 text-destructive" />
           </div>
           <CardTitle className="text-base">Acesso não permitido</CardTitle>
+          {/* A mensagem é genérica sobre o MOTIVO porque este componente serve a
+              várias rotas. Antes ele dizia sempre "prontuário e dados clínicos",
+              o que ficava errado ao bloquear, por exemplo, a tela de mensagens —
+              a recepção lia uma explicação sobre prontuário e não entendia por
+              que não podia editar texto de e-mail. */}
           <CardDescription>
             Seu perfil <strong>{rotuloPapel(papel)}</strong> não tem permissão para abrir esta área.
-            Prontuário e dados clínicos ficam restritos a dentistas, gestores e ao proprietário.
+            Cada área é liberada por perfil de acesso, e esta não está entre as suas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
