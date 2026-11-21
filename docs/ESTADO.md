@@ -8,11 +8,11 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
-| Etapa atual   | 9 — Orçamento, plano versionado e execução                      |
+| Etapa atual   | 10 — Financeiro do paciente                                     |
 | Status        | concluída (build verde + 4 critérios testados na API e na tela) |
-| Próxima etapa | 10 — Financeiro do paciente                                     |
+| Próxima etapa | 11 — Financeiro gerencial                                       |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
-| Versão        | 0.0.60                                                          |
+| Versão        | 0.0.66                                                          |
 
 ## Etapas
 
@@ -27,6 +27,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário        |
 | 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar            |
 | 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                      |
+| 10  | Financeiro do paciente  | concluída | contas a receber, baixa multi-forma, lote de vencimento, exportação contábil             |
 | 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
 | 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
 | 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
@@ -360,6 +361,54 @@ e não entregue), nunca o total — o executado foi entregue.
 | Item executado muda de dente      | recusado                               | ✔ 400                                         |
 | Item executado muda de valor      | recusado                               | ✔ 400                                         |
 | Item executado só observação      | aceito                                 | ✔ 200                                         |
+
+## Etapa 10 — competência x liquidação
+
+Quatro coleções: `plano_contas`, `forma_pagamento`, `titulo_receber`, `pagamento`.
+
+**A distinção que define a etapa** (e que quase todo sistema de consultório erra):
+
+| Campo                   | O que é                           | Base de        |
+| ----------------------- | --------------------------------- | -------------- |
+| `data_competencia`      | mês a que o serviço pertence      | DRE            |
+| `data_liquidacao`       | dia em que o dinheiro entrou      | fluxo de caixa |
+| `data_credito_prevista` | quando o dinheiro fica DISPONÍVEL | caixa real     |
+
+Cartão tem 30 dias de prazo: sem `data_credito_prevista`, o dono da clínica olha
+um "recebido" que ainda não está na conta.
+
+**Status e valor pago são DERIVADOS**, nunca digitados:
+`valor_pago = soma(recebimentos) − soma(estornos)`, e o status sai daí. É o que
+impede o estado impossível clássico (título "pago" sem nenhum pagamento).
+
+Por isso `titulo_receber` e `pagamento` têm regras de escrita **nulas**: aqui
+isso é correto (ao contrário do erro da Etapa 9) porque as rotas rodam como
+superuser e recalculam. Cliente gravar direto destruiria a derivação.
+
+**Estorno é lançamento novo** (`pagamento.tipo = 'estorno'`, valor positivo,
+subtraído no saldo), nunca exclusão — a trilha de quem recebeu precisa existir
+inclusive quando deu errado. Estorno é exclusivo de proprietário/gestor: recepção
+dá baixa, mas não desfaz sozinha.
+
+**Reagendamento em lote** aceita data fixa OU deslocamento em dias, nunca os
+dois; ignora título pago ou cancelado (mudar vencimento de algo já pago
+reescreveria o histórico de atraso).
+
+### Etapa 10 — testes
+
+| Teste                         | Esperado                      | Resultado                               |
+| ----------------------------- | ----------------------------- | --------------------------------------- |
+| R$ 1.000 pago em 400 + 600    | saldo zero, sem centavo       | ✔ parcial → pago, saldo 0               |
+| Cartão grava crédito previsto | +30 dias                      | ✔ 21/11 → 21/12                         |
+| Reagendar 10 títulos          | 1 operação                    | ✔ 10 alterados, 0 ignorados             |
+| Exportação do contador        | competência e categoria       | ✔ 3 linhas, 0 sem competência/categoria |
+| Pagamento acima do saldo      | recusado                      | ✔ 400 com o valor que falta             |
+| Duas formas no mesmo título   | 2 lançamentos                 | ✔ Pix 75 + Dinheiro 75                  |
+| Estorno                       | lançamento novo, nada apagado | ✔ 2 → 3 pagamentos, original intacto    |
+| Estorno duplo                 | recusado                      | ✔ 400                                   |
+| Título pago no lote           | ignorado                      | ✔ 0 alterados, 2 ignorados              |
+| Competência ≠ vencimento      | sim                           | ✔ 8 de 8 títulos                        |
+| DELETE de título pela API     | recusado                      | ✔ 403                                   |
 
 ## Pendências
 

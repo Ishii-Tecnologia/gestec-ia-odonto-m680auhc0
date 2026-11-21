@@ -19,12 +19,13 @@ const ETAPAS: Array<{ numero: number; titulo: string; status: Status }> = [
   { numero: 7, titulo: 'Prontuário', status: 'concluida' },
   { numero: 8, titulo: 'Catálogo e preços', status: 'concluida' },
   { numero: 9, titulo: 'Orçamento e execução', status: 'concluida' },
-  { numero: 10, titulo: 'Financeiro do paciente', status: 'proxima' },
+  { numero: 10, titulo: 'Financeiro do paciente', status: 'concluida' },
+  { numero: 11, titulo: 'Financeiro gerencial', status: 'proxima' },
 ]
 
 const RESUMO: Array<{ rotulo: string; valor: string }> = [
   { rotulo: 'Backend e banco', valor: 'Skip Cloud (PocketBase)' },
-  { rotulo: 'Coleções criadas', valor: '31' },
+  { rotulo: 'Coleções criadas', valor: '35' },
   { rotulo: 'Especialidades do CFO', valor: '25' },
   { rotulo: 'Módulos no catálogo', valor: '6' },
 ]
@@ -52,9 +53,10 @@ const Index = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Estado do projeto</CardTitle>
           <CardDescription>
-            Etapas 1 a 9 concluídas: fundação, isolamento entre CNPJs, estrutura da clínica, acesso
+            Etapas 1 a 10 concluídas: fundação, isolamento entre CNPJs, estrutura da clínica, acesso
             com auditoria, pacientes, agenda com conflito garantido pelo banco, prontuário com
-            sigilo, catálogo com preço por convênio e plano versionado com passivo clínico.
+            sigilo, catálogo com preço por convênio, plano versionado com passivo clínico e contas a
+            receber com competência separada da liquidação.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
