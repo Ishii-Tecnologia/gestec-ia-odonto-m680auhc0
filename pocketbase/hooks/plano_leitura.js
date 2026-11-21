@@ -72,37 +72,31 @@ routerAdd(
     }
     if (plano.getString('tenant_id') !== tenant) return e.notFoundError('Plano nao encontrado.')
 
-    function versaoCorrente(app, id) {
-      let atual
-      try {
-        atual = app.findRecordById('plano_tratamento', id)
-      } catch (_) {
-        return null
-      }
-      let guarda = 0
-      while (guarda < 50) {
-        guarda++
-        try {
-          const filho = app.findRecordsByFilter(
-            'plano_tratamento',
-            'plano_anterior_id = "' + atual.id + '"',
-            '-versao',
-            1,
-            0,
-          )
-          if (filho.length === 0) break
-          atual = filho[0]
-        } catch (_) {
-          break
-        }
-      }
-      return atual
-    }
+    /* Resolução da versão corrente, INLINE: o JSVM do PocketBase não enxerga
+       funções declaradas fora do callback (ReferenceError em runtime).
 
-    /* A rota aceita id de QUALQUER versão e resolve para a corrente. Assim a
+       A rota aceita id de QUALQUER versão e resolve para a corrente. Assim a
        tela pode guardar o id que tinha e não mostrar dado velho sem avisar. */
-    const corrente = versaoCorrente($app, plano.id)
-    const alvo = corrente || plano
+    let corrente = plano
+    let gv = 0
+    while (gv < 50) {
+      gv++
+      let filho = []
+      try {
+        filho = $app.findRecordsByFilter(
+          'plano_tratamento',
+          'plano_anterior_id = "' + corrente.id + '"',
+          '-versao',
+          1,
+          0,
+        )
+      } catch (_) {
+        break
+      }
+      if (filho.length === 0) break
+      corrente = filho[0]
+    }
+    const alvo = corrente
 
     const fases = []
     try {
@@ -258,7 +252,7 @@ routerAdd(
         observacoes: alvo.getString('observacoes'),
       },
       solicitado_id: plano.id,
-      eh_corrente: corrente ? corrente.id === plano.id : true,
+      eh_corrente: alvo.id === plano.id,
       fases: fases,
       totais: {
         bruto_centavos: bruto,

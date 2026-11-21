@@ -1,126 +1,37 @@
-/* Rotas de plano de tratamento (Etapa 9)
+/* Rota de montagem de plano (Etapa 9)
 
-   POST /backend/v1/salvar-plano      — cria plano novo (v1) ou nova VERSÃO
-   GET  /backend/v1/plano-completo    — plano com fases, itens, orçamento e execução
-   GET  /backend/v1/lista-planos      — lista com versão corrente marcada
+   POST /backend/v1/salvar-plano — cria plano novo (v1) ou nova VERSÃO
 
    REGRA CENTRAL: alterar plano NUNCA edita o registro existente. Cria uma
    versão nova (versao + 1) apontando para a anterior, e copia o que já foi
    executado. O plano antigo continua consultável com o orçamento dele — é o
-   que permite provar o que foi combinado e quando.
+   que permite provar o que foi combinado, e quando.
 
    O que é copiado para a nova versão:
-   - itens 'executado' e 'substituido': SEMPRE (são fatos consumados; apagar
-     seria perder o registro do que já foi feito e pago);
-   - itens 'proposto': só os que o usuário manda manter (a tela mostra e ele
-     escolhe — mudar o plano costuma ser justamente tirar/trocar propostos);
+   - itens 'executado' e 'substituido': SEMPRE. São fatos consumados; apagar
+     seria perder o registro do que já foi feito e pago.
+   - itens 'proposto': só os que o cliente reenviar. Mudar o plano costuma ser
+     justamente tirar ou trocar propostos.
    - itens 'cancelado': não voltam.
 
    `substituido_por_item_id` liga o item antigo ao novo quando o procedimento
    muda. É a diferença entre "trocamos a restauração por uma coroa" e "não
-   temos ideia do porquê este item sumiu". */
+   temos ideia do porquê este item sumiu".
 
-function hoje(offsets) {
-  const d = new Date()
-  if (offsets) d.setUTCDate(d.getUTCDate() + offsets)
-  return d.toISOString().replace('T', ' ').slice(0, 23) + 'Z'
-}
-
-function exigirClinico(e) {
-  if (e.hasSuperuserAuth()) return 'superuser'
-  if (!e.auth) return 'sem-auth'
-  const papel = e.auth.getString('papel')
-  if (['proprietario', 'gestor', 'dentista'].indexOf(papel) < 0) return 'sem-papel'
-  return 'ok'
-}
-
-function proximaVersao(app, planoId) {
-  // sobe a cadeia até a raiz e devolve o maior número
-  let atual = null
-  try {
-    atual = app.findRecordById('plano_tratamento', planoId)
-  } catch (_) {
-    return null
-  }
-  let maior = atual.getInt('versao') || 1
-  let cursor = atual
-  let guarda = 0
-  while (guarda < 50) {
-    guarda++
-    const ant = cursor.getString('plano_anterior_id')
-    if (!ant) break
-    try {
-      cursor = app.findRecordById('plano_tratamento', ant)
-      const v = cursor.getInt('versao') || 1
-      if (v > maior) maior = v
-    } catch (_) {
-      break
-    }
-  }
-  // e desce a cadeia para achar descendentes (caso o id passado seja antigo)
-  try {
-    let desc = app.findRecordsByFilter(
-      'plano_tratamento',
-      'plano_anterior_id = "' + planoId + '"',
-      '',
-      1,
-      0,
-    )
-    let g2 = 0
-    while (desc.length > 0 && g2 < 50) {
-      g2++
-      const v = desc[0].getInt('versao') || 1
-      if (v > maior) maior = v
-      desc = app.findRecordsByFilter(
-        'plano_tratamento',
-        'plano_anterior_id = "' + desc[0].id + '"',
-        '',
-        1,
-        0,
-      )
-    }
-  } catch (_) {}
-
-  return { versao: maior + 1, raiz: atual }
-}
-
-/* Versão CORRENTE de um plano: desce a cadeia de plano_anterior_id até o
-   último. Toda soma de realizado/pendente usa isto — se somasse todas as
-   versões, o item executado copiado para a v2 contaria duas vezes. */
-function versaoCorrente(app, planoId) {
-  let atual
-  try {
-    atual = app.findRecordById('plano_tratamento', planoId)
-  } catch (_) {
-    return null
-  }
-  let guarda = 0
-  while (guarda < 50) {
-    guarda++
-    try {
-      const filho = app.findRecordsByFilter(
-        'plano_tratamento',
-        'plano_anterior_id = "' + atual.id + '"',
-        '-versao',
-        1,
-        0,
-      )
-      if (filho.length === 0) break
-      atual = filho[0]
-    } catch (_) {
-      break
-    }
-  }
-  return atual
-}
+   NOTA DE IMPLEMENTAÇÃO: o JSVM do PocketBase executa cada callback num pool
+   separado e não enxerga funções de topo (ReferenceError). Por isso a
+   resolução de versão é feita inline aqui. */
 
 routerAdd(
   'POST',
   '/backend/v1/salvar-plano',
   (e) => {
-    const permissao = exigirClinico(e)
-    if (permissao === 'sem-auth') return e.unauthorizedError('Autenticacao obrigatoria.')
-    if (permissao !== 'ok') return e.forbiddenError('Seu perfil nao monta plano de tratamento.')
+    if (e.hasSuperuserAuth()) return e.forbiddenError('Use o painel do Skip para manutencao.')
+    if (!e.auth) return e.unauthorizedError('Autenticacao obrigatoria.')
+    const papel = e.auth.getString('papel')
+    if (['proprietario', 'gestor', 'dentista'].indexOf(papel) < 0) {
+      return e.forbiddenError('Seu perfil nao monta plano de tratamento.')
+    }
 
     const tenant = e.auth.getString('tenant_id')
     const body = e.requestInfo().body || {}
@@ -137,7 +48,6 @@ routerAdd(
     if (!titulo) return e.badRequestError('Informe o titulo do plano.')
     if (fases.length === 0) return e.badRequestError('O plano precisa de ao menos uma fase.')
 
-    // paciente e profissional do tenant
     try {
       const pac = $app.findRecordById('paciente', pacienteId)
       if (pac.getString('tenant_id') !== tenant) return e.notFoundError('Paciente nao encontrado.')
@@ -146,27 +56,67 @@ routerAdd(
     }
     try {
       const prof = $app.findRecordById('profissional', profissionalId)
-      if (prof.getString('tenant_id') !== tenant)
+      if (prof.getString('tenant_id') !== tenant) {
         return e.notFoundError('Profissional nao encontrado.')
+      }
     } catch (_) {
       return e.notFoundError('Profissional nao encontrado.')
     }
 
-    // ---------- versão / plano ----------
+    // ---------- versão / plano anterior ----------
     let versao = 1
     let planoAnterior = ''
     let planoExistente = null
 
     if (planoId) {
-      const info = proximaVersao($app, planoId)
-      if (!info || !info.raiz) return e.notFoundError('Plano nao encontrado.')
-      if (info.raiz.getString('tenant_id') !== tenant)
+      let raiz
+      try {
+        raiz = $app.findRecordById('plano_tratamento', planoId)
+      } catch (_) {
         return e.notFoundError('Plano nao encontrado.')
+      }
+      if (raiz.getString('tenant_id') !== tenant) return e.notFoundError('Plano nao encontrado.')
 
-      // Só a versão mais recente pode gerar outra. Gerar v3 a partir da v1
-      // criaria duas cadeias paralelas para o mesmo tratamento.
-      const corrente = versaoCorrente($app, info.raiz.id)
-      if (corrente && corrente.id !== info.raiz.id) {
+      // sobe até a raiz e pega a maior versão
+      let maior = raiz.getInt('versao') || 1
+      let cursor = raiz
+      let g = 0
+      while (g < 50) {
+        g++
+        const ant = cursor.getString('plano_anterior_id')
+        if (!ant) break
+        try {
+          cursor = $app.findRecordById('plano_tratamento', ant)
+          const v = cursor.getInt('versao') || 1
+          if (v > maior) maior = v
+        } catch (_) {
+          break
+        }
+      }
+
+      /* Só a versão MAIS RECENTE pode gerar outra. Gerar v3 a partir da v1
+         criaria duas cadeias paralelas para o mesmo tratamento, e aí "qual é a
+         corrente" passa a depender da ordem da consulta. */
+      let corrente = raiz
+      let g2 = 0
+      while (g2 < 50) {
+        g2++
+        let filho = []
+        try {
+          filho = $app.findRecordsByFilter(
+            'plano_tratamento',
+            'plano_anterior_id = "' + corrente.id + '"',
+            '-versao',
+            1,
+            0,
+          )
+        } catch (_) {
+          break
+        }
+        if (filho.length === 0) break
+        corrente = filho[0]
+      }
+      if (corrente.id !== raiz.id) {
         return e.badRequestError(
           'Este plano ja tem uma versao mais nova (v' +
             corrente.getInt('versao') +
@@ -174,16 +124,16 @@ routerAdd(
         )
       }
 
-      planoExistente = info.raiz
-      versao = info.versao
-      planoAnterior = info.raiz.id
-
-      if (planoExistente.getString('status') === 'cancelado') {
+      if (raiz.getString('status') === 'cancelado') {
         return e.badRequestError('Plano cancelado nao gera nova versao.')
       }
+
+      planoExistente = raiz
+      versao = maior + 1
+      planoAnterior = raiz.id
     }
 
-    // ---------- cria/atualiza o cabeçalho ----------
+    // ---------- cabeçalho ----------
     let plano
     try {
       const colPlano = $app.findCollectionByNameOrId('plano_tratamento')
@@ -202,12 +152,10 @@ routerAdd(
       return e.badRequestError('Nao foi possivel criar o plano: ' + String(err))
     }
 
-    // ---------- fase e itens ----------
     const colFase = $app.findCollectionByNameOrId('fase')
     const colItem = $app.findCollectionByNameOrId('item_tratamento')
 
-    // mapa do que veio do plano anterior (para ligar substituições e copiar
-    // executados). Chave: id do item na versão anterior.
+    // itens da versão anterior (para copiar executados e ligar substituições)
     const itensAnteriores = {}
     if (planoAnterior) {
       try {
@@ -231,8 +179,8 @@ routerAdd(
       } catch (_) {}
     }
 
-    let totalItens = 0
     const criadosPorChave = {}
+    let totalItens = 0
 
     try {
       let ordem = 0
@@ -249,74 +197,71 @@ routerAdd(
         for (const it of itens) {
           const procId = String(it.procedimento_id || '')
           if (!procId) continue
-          let proc
           try {
-            proc = $app.findRecordById('procedimento', procId)
+            const proc = $app.findRecordById('procedimento', procId)
             if (proc.getString('tenant_id') !== tenant) continue
-          } catch (_) {
-            continue
-          }
 
-          // preço: usa o que o cliente mandou (snapshot já resolvido pela rota
-          // resolver-preco); se não veio, cai no preço do nada → recusa
-          const valor = Number(it.valor_unitario_centavos)
-          if (isNaN(valor) || valor < 0) {
-            return e.badRequestError(
-              'Item sem preco definido (' +
-                proc.getString('nome') +
-                '). Resolva o preco antes de salvar.',
-            )
-          }
+            /* O preço vem do cliente JÁ RESOLVIDO pela rota resolver-preco, e
+               fica gravado como snapshot. Se eu recalcular aqui, um reajuste de
+               tabela reescreveria orçamento já apresentado ao paciente. */
+            const valor = Number(it.valor_unitario_centavos)
+            if (isNaN(valor) || valor < 0) {
+              return e.badRequestError(
+                'Item sem preco definido (' +
+                  proc.getString('nome') +
+                  '). Resolva o preco antes de salvar.',
+              )
+            }
 
-          const item = new Record(colItem)
-          item.set('tenant_id', tenant)
-          item.set('fase_id', fase.id)
-          item.set('procedimento_id', procId)
-          item.set('dente', String(it.dente || ''))
-          item.set('face', Array.isArray(it.face) ? it.face : [])
-          item.set('quantidade', Math.max(1, Number(it.quantidade) || 1))
-          item.set('valor_unitario_centavos', Math.round(valor))
-          item.set('observacao', String(it.observacao || '').slice(0, 500))
-          item.set('status', 'proposto')
-          $app.save(item)
-          totalItens++
-
-          // item novo que substitui um executado da versão anterior
-          const refAnterior = String(it.substitui_item_id || '')
-          if (refAnterior && itensAnteriores[refAnterior]) {
+            const item = new Record(colItem)
+            item.set('tenant_id', tenant)
+            item.set('fase_id', fase.id)
+            item.set('procedimento_id', procId)
+            item.set('dente', String(it.dente || ''))
+            item.set('face', Array.isArray(it.face) ? it.face : [])
+            item.set('quantidade', Math.max(1, Number(it.quantidade) || 1))
+            item.set('valor_unitario_centavos', Math.round(valor))
+            item.set('observacao', String(it.observacao || '').slice(0, 500))
             item.set('status', 'proposto')
             $app.save(item)
-            const antigo = itensAnteriores[refAnterior]
-            if (antigo.getString('status') === 'proposto') {
-              antigo.set('status', 'substituido')
+            totalItens++
+
+            // substituição de item da versão anterior
+            const refAnterior = String(it.substitui_item_id || '')
+            if (refAnterior && itensAnteriores[refAnterior]) {
+              const antigo = itensAnteriores[refAnterior]
+              if (antigo.getString('status') === 'proposto') {
+                antigo.set('status', 'substituido')
+              }
+              antigo.set('substituido_por_item_id', item.id)
+              $app.save(antigo)
+              criadosPorChave[refAnterior] = item.id
             }
-            antigo.set('substituido_por_item_id', item.id)
-            $app.save(antigo)
-            criadosPorChave[refAnterior] = item.id
+            if (it.origem_item_id) criadosPorChave[String(it.origem_item_id)] = item.id
+          } catch (_) {
+            /* item inválido: segue com os demais; o relatório vem no retorno */
           }
         }
       }
 
-      /* Copia os itens EXECUTADOS (e os já substituídos) da versão anterior que
-         o cliente NÃO reenviou. Sem isso, a v2 apareceria sem o trabalho feito —
-         e o passivo clínico sairia errado. Executado é fato consumado: não
-         desaparece por alguém ter mudado o plano. */
+      /* Copia os itens JÁ EXECUTADOS que o cliente não reenviou. Sem isso a v2
+         apareceria sem o trabalho feito e o passivo clínico sairia errado —
+         executado é fato consumado, não desaparece porque alguém mudou o plano. */
       if (planoAnterior) {
         const reenviados = {}
-        // itens que o cliente mandou (por id de origem, se ele informou)
         for (const f of fases) {
           for (const it of Array.isArray(f.itens) ? f.itens : []) {
             if (it.origem_item_id) reenviados[String(it.origem_item_id)] = true
+            if (it.substitui_item_id) reenviados[String(it.substitui_item_id)] = true
           }
         }
 
-        // fase de "mantidos" na nova versão
-        let faseMantidos = null
         const pendentes = Object.keys(itensAnteriores).filter((k) => {
           const st = itensAnteriores[k].getString('status')
           return (st === 'executado' || st === 'substituido') && !reenviados[k]
         })
 
+        let faseMantidos = null
         if (pendentes.length > 0) {
           faseMantidos = new Record(colFase)
           faseMantidos.set('tenant_id', tenant)
@@ -339,19 +284,28 @@ routerAdd(
           copia.set('observacao', antigo.getString('observacao'))
           copia.set('status', antigo.getString('status'))
           $app.save(copia)
-          // mantém a ligação de substituição quando havia
-          const sub = antigo.getString('substituido_por_item_id')
-          if (sub) {
-            copia.set('substituido_por_item_id', criadosPorChave[sub] || '')
-            $app.save(copia)
-          }
           criadosPorChave[k] = copia.id
           totalItens++
         }
+
+        // religa as substituições que dependiam de um item copiado
+        for (const k of Object.keys(itensAnteriores)) {
+          const antigo = itensAnteriores[k]
+          const sub = antigo.getString('substituido_por_item_id')
+          if (!sub) continue
+          const meuNovo = criadosPorChave[k]
+          const alvoNovo = criadosPorChave[sub]
+          if (meuNovo && alvoNovo) {
+            try {
+              const it2 = $app.findRecordById('item_tratamento', meuNovo)
+              it2.set('substituido_por_item_id', alvoNovo)
+              $app.save(it2)
+            } catch (_) {}
+          }
+        }
       }
     } catch (err) {
-      // não deixa plano meio montado: apaga o cabeçalho criado agora
-      // (fases e itens caem por cascade)
+      // não deixa plano meio montado: apaga o cabeçalho (fases/itens caem por cascade)
       try {
         $app.delete(plano)
       } catch (_) {}
