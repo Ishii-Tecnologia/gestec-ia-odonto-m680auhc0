@@ -86,7 +86,13 @@ interface Item {
   plano_contas_nome: string
   parcela: number
   parcelas_total: number
-  formas: Array<{ tipo: string; valor_centavos: number; forma: string; data: string; credito_previsto: string }>
+  formas: Array<{
+    tipo: string
+    valor_centavos: number
+    forma: string
+    data: string
+    credito_previsto: string
+  }>
 }
 
 interface Resposta {
@@ -102,6 +108,22 @@ interface Resposta {
     n_vencidos: number
   }
   hoje: string
+}
+
+interface PlanoOpt {
+  id: string
+  nome: string
+}
+
+interface FormaOpt {
+  id: string
+  nome: string
+  prazo: number
+}
+
+interface LinhaPag {
+  forma: string
+  valor: string
 }
 
 function brl(c: number): string {
@@ -135,14 +157,13 @@ export default function ContasReceber() {
   const [ate, setAte] = useState('')
   const [fPlano, setFPlano] = useState('todos')
 
-  const [planos, setPlanos] = useState<Array<{ id: string; nome: string }>>([])
-  const [formas, setFormas] = useState<Array<{ id: string; nome: string; prazo: number }>>([]>
+  const [planos, setPlanos] = useState<PlanoOpt[]>([])
+  const [formas, setFormas] = useState<FormaOpt[]>([])
 
   const [selecionados, setSelecionados] = useState<string[]>([])
-
   // baixa
   const [alvoBaixa, setAlvoBaixa] = useState<Item | null>(null)
-  const [linhasPag, setLinhasPag] = useState<Array<{ forma: string; valor: string }>>([])
+  const [linhasPag, setLinhasPag] = useState<LinhaPag[]>([])
   const [dataPag, setDataPag] = useState('')
   const [obsPag, setObsPag] = useState('')
   const [processando, setProcessando] = useState(false)
@@ -215,7 +236,12 @@ export default function ContasReceber() {
     setDataPag(new Date().toISOString().slice(0, 10))
     setObsPag('')
     // pré-preenche com o saldo na primeira forma (o caso comum é quitar)
-    setLinhasPag([{ forma: formas[0]?.id || '', valor: (item.saldo_centavos / 100).toFixed(2).replace('.', ',') }])
+    setLinhasPag([
+      {
+        forma: formas[0]?.id || '',
+        valor: (item.saldo_centavos / 100).toFixed(2).replace('.', ','),
+      },
+    ])
   }
 
   async function confirmarBaixa() {
@@ -374,7 +400,12 @@ export default function ContasReceber() {
           </p>
         </div>
         {podeEstornar && (
-          <Button variant="outline" size="sm" onClick={() => void exportar()} disabled={processando}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void exportar()}
+            disabled={processando}
+          >
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Exportar contador
           </Button>
@@ -432,9 +463,7 @@ export default function ContasReceber() {
           </Card>
           <Card>
             <CardContent className="py-3">
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Total
-              </div>
+              <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Total</div>
               <div className="text-lg font-semibold tabular-nums">
                 {brl(dados.totais.total_centavos)}
               </div>
@@ -549,7 +578,10 @@ export default function ContasReceber() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
-                          <Link to={`/pacientes/${i.paciente_id}/extrato`} className="hover:underline">
+                          <Link
+                            to={`/pacientes/${i.paciente_id}/extrato`}
+                            className="hover:underline"
+                          >
                             {i.paciente_nome}
                           </Link>
                           <div className="text-[11px] text-muted-foreground">
@@ -650,7 +682,11 @@ export default function ContasReceber() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Observação</Label>
-                <Input value={obsPag} onChange={(e) => setObsPag(e.target.value)} placeholder="opcional" />
+                <Input
+                  value={obsPag}
+                  onChange={(e) => setObsPag(e.target.value)}
+                  placeholder="opcional"
+                />
               </div>
             </div>
 
@@ -733,7 +769,11 @@ export default function ContasReceber() {
               Cancelar
             </Button>
             <Button onClick={() => void confirmarBaixa()} disabled={processando}>
-              {processando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Confirmar recebimento'}
+              {processando ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                'Confirmar recebimento'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
