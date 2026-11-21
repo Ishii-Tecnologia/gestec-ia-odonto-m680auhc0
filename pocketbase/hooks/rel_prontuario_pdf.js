@@ -433,11 +433,37 @@ routerAdd(
         .toLowerCase() +
       '.pdf'
 
+    /* CONVERSÃO PARA BASE64.
+       `bytes.toString('base64')` NÃO funciona no goja: o argumento é ignorado e
+       o retorno é a lista de bytes separada por vírgula ("37,80,68,70,...").
+       O cliente recebia algo que parecia base64 e falhava ao decodificar — o
+       PDF existia, o transporte estava errado.
+
+       Aqui leio os bytes um a um e monto o base64 à mão, que é o único caminho
+       confiável neste runtime. */
+    let base64 = ''
+    try {
+      const T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+      const total = bytes.length
+      for (let i = 0; i < total; i += 3) {
+        const b0 = bytes[i]
+        const b1 = i + 1 < total ? bytes[i + 1] : 0
+        const b2 = i + 2 < total ? bytes[i + 2] : 0
+        base64 += T.charAt(b0 >> 2)
+        base64 += T.charAt(((b0 & 3) << 4) | (b1 >> 4))
+        base64 += i + 1 < total ? T.charAt(((b1 & 15) << 2) | (b2 >> 6)) : '='
+        base64 += i + 2 < total ? T.charAt(b2 & 63) : '='
+      }
+    } catch (err) {
+      return e.badRequestError('PDF gerado, mas falhou codificar: ' + String(err).slice(0, 200))
+    }
+
     return e.json(200, {
       ok: true,
       nome_arquivo: nomeArquivo,
       // base64: o cliente baixa e o registro em auditoria já existe
-      pdf_base64: bytes ? (bytes.toString ? bytes.toString('base64') : '') : '',
+      pdf_base64: base64,
+      pdf_bytes: bytes.length,
       evolucoes: evolucoes.length,
       alertas: alertas.length,
       auditado: true,
