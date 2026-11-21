@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T00:03:35.291Z",
+  "generatedAt": "2026-11-21T00:04:30.078Z",
   "collections": [
     {
       "name": "users",
@@ -2512,7 +2512,7 @@
         "list": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
         "view": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id",
         "create": null,
-        "update": null,
+        "update": "@request.auth.id != '' && tenant_id = @request.auth.tenant_id && (@request.auth.papel = 'proprietario' || @request.auth.papel = 'gestor' || @request.auth.papel = 'dentista')",
         "delete": null
       },
       "fields": [
