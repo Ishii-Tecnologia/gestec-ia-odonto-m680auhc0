@@ -51,19 +51,34 @@ migrate(
       log('campo totp_segredo criado')
     }
 
-    // ---------- 2. MFA nativo ----------
-    /* A regra é avaliada contra o PRÓPRIO registro do usuário. Só quem tem
-       two_factor_ativo = true passa por ela. Quem não tem entra só com senha —
-       é o caso da recepção, que não lê prontuário. */
-    users.mfa.enabled = true
-    users.mfa.rule = 'two_factor_ativo = true'
-    users.mfa.duration = 600
+    // ---------- 2 e 3. MFA NATIVO: NÃO USAR. OTP PÚBLICO: TRANCADO ----------
+    /* TENTEI o MFA nativo e NÃO SERVE AQUI. O PocketBase valida a coleção com
+       "MFA requires at least 2 auth methods to be enabled": para ligar
+       users.mfa é obrigatório ligar também users.otp. E o OTP do núcleo não tem
+       campo de regra — ligado, /request-otp manda código para QUALQUER e-mail e
+       /auth-with-otp loga SEM SENHA. Ou seja: usar o MFA nativo exigiria abrir
+       um login sem senha, que é o oposto do que esta etapa quer.
 
-    // ---------- 3. OTP público trancado ----------
+       O erro apareceu ao aplicar a migration 0037: "MFA requires at least 2
+       auth methods to be enabled". Não é limitação contornável por
+       configuração.
+
+       Então o segundo fator é controlado por rota:
+       - onRecordAuthWithPasswordRequest recusa a sessão quando
+         two_factor_ativo = true e escreve a própria resposta (sem chamar
+         e.next(), logo sem token), devolvendo um desafio;
+       - a rota /verificar-segundo-fator confere o código e SÓ ENTÃO emite o
+         token.
+
+       Os dois ficam desligados aqui de propósito. Se alguém ligar otp.enabled
+       mais tarde "para testar", abre login sem senha — por isso existe também o
+       hook onRecordAuthWithOTPRequest, que recusa esse caminho. */
+    users.mfa.enabled = false
+    users.mfa.rule = ''
     users.otp.enabled = false
 
     app.save(users)
-    log('MFA ligado (regra: two_factor_ativo = true), OTP publico desligado')
+    log('MFA nativo desligado e OTP publico trancado (ver motivo no comentario)')
 
     // ---------- 4. coleção autenticacao_fator ----------
     let existe = true
@@ -168,6 +183,11 @@ migrate(
           },
           // hash do código de 6 dígitos
           { name: 'codigo_hash', type: 'text', required: false, max: 200 },
+          /* Hash do token de desafio. O desafio é o que o cliente carrega entre
+             o login por senha e a verificação do código — se eu guardasse o
+             token em claro, um vazamento do banco permitiria completar o
+             segundo fator sem o e-mail. */
+          { name: 'desafio_hash', type: 'text', required: false, max: 200 },
           { name: 'expira_em', type: 'date', required: false },
           { name: 'tentativas', type: 'number', required: false, min: 0, max: 100 },
           { name: 'usado_em', type: 'date', required: false },
@@ -181,6 +201,7 @@ migrate(
         indexes: [
           'CREATE INDEX idx_codigo_usuario ON codigo_segundo_fator (usuario_id, created DESC)',
           'CREATE INDEX idx_codigo_recuperacao ON codigo_segundo_fator (recuperacao_hash)',
+          'CREATE INDEX idx_codigo_desafio ON codigo_segundo_fator (desafio_hash)',
         ],
       })
       app.save(col)
@@ -347,12 +368,6 @@ migrate(
   },
   (app) => {
     // rollback
-    try {
-      const users = app.findCollectionByNameOrId('_pb_users_auth_')
-      users.mfa.enabled = false
-      users.mfa.rule = ''
-      app.save(users)
-    } catch (_) {}
     for (const nome of ['codigo_segundo_fator', 'autenticacao_fator', 'modelo_mensagem']) {
       try {
         app.delete(app.findCollectionByNameOrId(nome))
