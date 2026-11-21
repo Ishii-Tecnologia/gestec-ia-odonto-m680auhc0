@@ -12,7 +12,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | Status        | 15 etapas completas · fluxo operacional 11/11 · avisos operacionais |
 | Próxima etapa | Fase 2 (TISS, NGS2, CRUDs faltantes)                                |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)               |
-| Versão        | 0.0.114                                                             |
+| Versão        | 0.0.121                                                             |
 
 ## Etapas
 
@@ -61,6 +61,18 @@ coleção desde as Etapas 8 e 11, mas só davam para popular por migration. Nas 
 **desativar em vez de excluir**: convênio e centro de custo são apontados por
 histórico, e apagar reescreveria a DRE. O diálogo de exclusão explica isso antes
 de falhar.
+
+**Redefinição de senha (v0.0.121):** `/reset-password` (pública) + link "Esqueci
+minha senha" no login. Antes, o convite criava a conta com senha aleatória e a rota
+mandava o convidado usar um caminho que não existia na tela — e `{RESET_URL}` da
+plataforma aponta para `/reset-password`, que não existia no app. Todo convidado
+dependia do proprietário ditar uma senha temporária.
+
+**Base separada da demo — pendente de decisão (A/B):** está provado que preview e
+produção são o MESMO banco (logs idênticos, mesmos IDs, mesmo totalItems). O
+caminho para separar é projeto Skip novo replicando as migrations sem os seeds
+demo. Custo e alternativas em `artifacts/gestec/14-separacao-base-clinica.md`.
+O roteiro do primeiro dia está em `13-roteiro-primeiro-dia-piloto.md`.
 
 ## Decisões fechadas
 
