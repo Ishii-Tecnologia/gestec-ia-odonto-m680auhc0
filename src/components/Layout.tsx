@@ -26,6 +26,7 @@ import {
   Receipt,
   Activity,
   LayoutDashboard,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -84,6 +85,14 @@ const ITENS: ItemMenu[] = [
     to: '/producao',
     icone: Activity,
     visivel: (papel) => ['proprietario', 'gestor', 'dentista'].indexOf(papel) >= 0,
+  },
+  /* Segurança aparece para TODOS: o segundo fator é opcional para recepção e
+     financeiro, mas eles precisam poder ativá-lo se quiserem. */
+  {
+    label: 'Segurança',
+    to: '/seguranca',
+    icone: ShieldCheck,
+    visivel: () => true,
   },
   {
     label: 'Passivo clínico',

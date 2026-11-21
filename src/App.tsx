@@ -30,6 +30,7 @@ import Aging from './pages/Aging'
 import Despesas from './pages/Despesas'
 import Painel from './pages/Painel'
 import FaltasProducao from './pages/FaltasProducao'
+import Seguranca from './pages/Seguranca'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -104,6 +105,16 @@ const App = () => (
               element={
                 <RotaProtegida papeis={PAPEIS_CLINICOS}>
                   <FaltasProducao />
+                </RotaProtegida>
+              }
+            />
+
+            {/* segurança da conta: todo mundo tem conta, todo mundo configura */}
+            <Route
+              path="/seguranca"
+              element={
+                <RotaProtegida>
+                  <Seguranca />
                 </RotaProtegida>
               }
             />
