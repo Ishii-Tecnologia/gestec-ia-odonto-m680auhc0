@@ -8,11 +8,11 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
-| Etapa atual   | 8 — Catálogo e preços                                           |
-| Status        | concluída (build verde + 3 critérios testados na API e na tela) |
-| Próxima etapa | 9 — Orçamento, plano versionado e execução                      |
+| Etapa atual   | 9 — Orçamento, plano versionado e execução                      |
+| Status        | concluída (build verde + 4 critérios testados na API e na tela) |
+| Próxima etapa | 10 — Financeiro do paciente                                     |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
-| Versão        | 0.0.50                                                          |
+| Versão        | 0.0.60                                                          |
 
 ## Etapas
 
@@ -26,6 +26,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 6   | Agenda                  | concluída | `agenda_slot` com UNIQUE por profissional e por sala; 4 critérios provados               |
 | 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário        |
 | 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar            |
+| 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                      |
 | 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
 | 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
 | 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
@@ -315,6 +316,50 @@ Agora cada procedimento resolve o próprio preço e a resposta diz em
 | CSV válido confirmando                     | grava                        | ✔ 2 gravados, banco 12                         |
 | Tabela sobrepondo vigência                 | recusada                     | ✔ 400 com instrução                            |
 | Fechar anterior e abrir nova               | aceita                       | ✔ 200                                          |
+
+## Etapa 9 — plano versionado, passivo e cancelamento
+
+Seis coleções: `plano_tratamento`, `fase`, `item_tratamento`, `orcamento`,
+`procedimento_realizado`, `credito_paciente`.
+
+**Três decisões que mandam no resto:**
+
+1. `item_tratamento.valor_unitario_centavos` é **snapshot**. Se o preço fosse
+   resolvido na leitura, um reajuste de tabela reescreveria o orçamento que o
+   paciente já aprovou. O preço entra no item quando o plano é montado.
+
+2. **Só a versão CORRENTE conta** para realizado, pendente e passivo. A v2 copia
+   os executados da v1; somar as duas contaria o mesmo trabalho duas vezes. Toda
+   soma resolve a corrente descendo a cadeia de `plano_anterior_id`.
+
+3. Alterar plano é ROTA (`/backend/v1/salvar-plano`), nunca update. Versionar
+   exige copiar fases e itens e decidir qual é a corrente — update direto
+   poderia editar a versão antiga.
+
+**Regra de versionamento implementada:** v(n+1) com `plano_anterior_id`;
+executados e substituídos são copiados SEMPRE (fato consumado); propostos só se
+o cliente reenviar; cancelados não voltam. `substituido_por_item_id` liga antigo
+→ novo. Só a versão mais recente pode gerar outra (senão nascem cadeias
+paralelas e "qual é a corrente" vira sorte).
+
+**Regra de cancelamento:** status, nunca delete. Com execução, é **obrigatório**
+escolher crédito ou estorno, com motivo. O valor devolvido é o PENDENTE (cobrado
+e não entregue), nunca o total — o executado foi entregue.
+
+### Etapa 9 — testes
+
+| Teste                             | Esperado                               | Resultado                                     |
+| --------------------------------- | -------------------------------------- | --------------------------------------------- |
+| Plano de 3 itens, 2 executados    | realizado 380 / pendente 900           | ✔ bruto 1.280                                 |
+| Passivo = soma dos não executados | igual                                  | ✔ 900 = 900 (soma manual)                     |
+| Trocar coroa por endo cria v2     | v2, executados mantidos, v1 preservada | ✔ v2 com 2 exec, v1 com 3 itens               |
+| Passivo depois da v2              | não contar em dobro                    | ✔ R$ 600                                      |
+| Cancelar sem crédito/estorno      | recusado                               | ✔ 400                                         |
+| Cancelar sem motivo               | recusado                               | ✔ 400                                         |
+| Cancelar com crédito              | registra, não apaga                    | ✔ 3 itens, 2 realizados, 1 crédito, passivo 0 |
+| Item executado muda de dente      | recusado                               | ✔ 400                                         |
+| Item executado muda de valor      | recusado                               | ✔ 400                                         |
+| Item executado só observação      | aceito                                 | ✔ 200                                         |
 
 ## Pendências
 
