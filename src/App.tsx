@@ -37,6 +37,7 @@ import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { ModulosProvider } from './contexts/ModulosContext'
 import { RotaProtegida } from './components/RotaProtegida'
+import { BloqueioPorModulo } from './components/BloqueioPorModulo'
 
 const App = () => (
   <BrowserRouter>
@@ -98,40 +99,12 @@ const App = () => (
               <Route path="/contas-receber" element={<ContasReceber />} />
               <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
 
-              {/* painel e relatórios operacionais */}
-              <Route
-                path="/painel"
-                element={
-                  <RotaProtegida papeis={PAPEIS_GESTAO}>
-                    <Painel />
-                  </RotaProtegida>
-                }
-              />
-              <Route
-                path="/producao"
-                element={
-                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                    <FaltasProducao />
-                  </RotaProtegida>
-                }
-              />
-
               {/* segurança da conta: todo mundo tem conta, todo mundo configura */}
               <Route
                 path="/seguranca"
                 element={
                   <RotaProtegida>
                     <Seguranca />
-                  </RotaProtegida>
-                }
-              />
-
-              {/* modelos de mensagem: só quem administra a clínica */}
-              <Route
-                path="/mensagens"
-                element={
-                  <RotaProtegida papeis={PAPEIS_GESTAO}>
-                    <ModelosMensagem />
                   </RotaProtegida>
                 }
               />
@@ -151,7 +124,9 @@ const App = () => (
                 path="/dre"
                 element={
                   <RotaProtegida papeis={PAPEIS_GESTAO}>
-                    <Dre />
+                    <BloqueioPorModulo modulo="financeiro">
+                      <Dre />
+                    </BloqueioPorModulo>
                   </RotaProtegida>
                 }
               />
@@ -159,7 +134,9 @@ const App = () => (
                 path="/fluxo-caixa"
                 element={
                   <RotaProtegida papeis={PAPEIS_GESTAO}>
-                    <FluxoCaixa />
+                    <BloqueioPorModulo modulo="financeiro">
+                      <FluxoCaixa />
+                    </BloqueioPorModulo>
                   </RotaProtegida>
                 }
               />
@@ -167,21 +144,62 @@ const App = () => (
                 path="/despesas"
                 element={
                   <RotaProtegida papeis={PAPEIS_GESTAO}>
-                    <Despesas />
+                    <BloqueioPorModulo modulo="financeiro">
+                      <Despesas />
+                    </BloqueioPorModulo>
                   </RotaProtegida>
                 }
               />
-              <Route path="/inadimplencia" element={<Aging />} />
-
-              {/* plano de tratamento e passivo: clínicos */}
+              <Route
+                path="/inadimplencia"
+                element={
+                  <BloqueioPorModulo modulo="financeiro">
+                    <Aging />
+                  </BloqueioPorModulo>
+                }
+              />
+              <Route
+                path="/painel"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <BloqueioPorModulo modulo="relatorios">
+                      <Painel />
+                    </BloqueioPorModulo>
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/producao"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <BloqueioPorModulo modulo="relatorios">
+                      <FaltasProducao />
+                    </BloqueioPorModulo>
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/mensagens"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <BloqueioPorModulo modulo="automacoes">
+                      <ModelosMensagem />
+                    </BloqueioPorModulo>
+                  </RotaProtegida>
+                }
+              />
               <Route
                 path="/passivo-clinico"
                 element={
                   <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                    <PassivoClinico />
+                    <BloqueioPorModulo modulo="orcamento">
+                      <PassivoClinico />
+                    </BloqueioPorModulo>
                   </RotaProtegida>
                 }
               />
+
+              {/* plano de tratamento: clínicos */}
               <Route
                 path="/pacientes/:id/plano"
                 element={

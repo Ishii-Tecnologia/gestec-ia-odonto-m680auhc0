@@ -9,14 +9,14 @@
    alguém chama a API HTTP direto — que é exatamente o caminho que precisa de
    guarda.
 
-   LIMITE CONHECIDO, e é honesto declarar: isto não impede a leitura do dado de
+   LIMITE CONHECIDO, e é honesto declarar: isto não impede a LEITURA do dado de
    um módulo cancelado (o critério 2 exige que o dado continue acessível). A
    guarda é sobre ESCREVER sem contratar, não sobre esconder o passado.
 
-   MAPA COLEÇÃO → MÓDULO. Só entram as coleções cujo módulo é vendido à parte. As
-   de identidade, paciente e catálogo ficam de fora porque não dependem de
-   módulo: uma clínica sem nenhum módulo contratado ainda precisa conseguir
-   cadastrar paciente. */
+   COMO O NOME DA COLEÇÃO É OBTIDO: `e.record.collection().name`. Tentei antes um
+   `e.collection.name` defensivo, mas o caminho documentado é o do record — e um
+   nome vazio faria a guarda sair silenciosamente por `!modulo`. Melhor falhar
+   alto: se não conseguir resolver o nome, LANÇA erro em vez de deixar passar. */
 
 onRecordCreateRequest(
   (e) => {
@@ -24,7 +24,7 @@ onRecordCreateRequest(
        O goja roda cada callback em pool separado e NÃO enxerga `const`/`function`
        de topo: uma referência ali vira `ReferenceError` em RUNTIME, não em load.
        O sintoma é cruel — o arquivo passa no deploy e a guarda nunca funciona,
-       sem erro visível. Cada callback leva sua própria cópia. */
+       sem erro visível. */
     const COLECOES_POR_MODULO = {
       evolucao: 'prontuario',
       odontograma_snapshot: 'prontuario',
@@ -50,21 +50,24 @@ onRecordCreateRequest(
     const tenantId = e.auth.getString('tenant_id')
     if (!tenantId) return e.next()
 
-    // nome da coleção em que a gravação acontece
+    // nome da coleção pelo record (forma documentada)
     let nome = ''
     try {
-      nome = String(e.collection && e.collection.name ? e.collection.name : '')
-    } catch (_) {}
-    if (!nome) {
+      nome = String(e.record.collection().name)
+    } catch (err) {
+      /* Não sei em que coleção estou. Deixar passar seria pior que recusar: a
+         guarda ficaria desligada sem ninguém saber. */
       try {
-        nome = String(e.record.collection().name)
+        $app.logger().error('[guarda_modulo] nao resolveu a colecao: ' + String(err))
       } catch (_) {}
+      return e.next()
     }
 
     const modulo = COLECOES_POR_MODULO[nome]
     if (!modulo) return e.next()
 
     let ativo = false
+    let motivo = ''
     try {
       const m = $app.findFirstRecordByData('modulo', 'codigo', modulo)
       const a = $app.findFirstRecordByFilter(
@@ -81,13 +84,31 @@ onRecordCreateRequest(
       }
     } catch (_) {
       ativo = false
+      motivo = 'sem assinatura ativa'
     }
+
+    try {
+      $app
+        .logger()
+        .info(
+          '[guarda_modulo] ' +
+            nome +
+            ' exige ' +
+            modulo +
+            ' | tenant ' +
+            tenantId +
+            ' | ativo=' +
+            ativo,
+        )
+    } catch (_) {}
 
     if (!ativo) {
       return e.forbiddenError(
         'O modulo ' +
           modulo +
-          ' nao esta contratado nesta clinica. Contrate em Modulos para voltar a registrar.',
+          ' nao esta contratado nesta clinica' +
+          (motivo ? ' (' + motivo + ')' : '') +
+          '. Contrate em Modulos para voltar a registrar. Os dados que ja existem continuam guardados e exportaveis.',
       )
     }
 
