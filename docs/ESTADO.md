@@ -6,13 +6,13 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 ## Situação atual
 
-| Campo         | Valor                                                           |
-| ------------- | --------------------------------------------------------------- |
-| Etapa atual   | 11 — Financeiro gerencial                                       |
-| Status        | concluída (build verde + 5 critérios testados na API e na tela) |
-| Próxima etapa | 12 — Relatórios operacionais                                    |
-| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
-| Versão        | 0.0.73                                                          |
+| Campo         | Valor                                                 |
+| ------------- | ----------------------------------------------------- |
+| Etapa atual   | 13 — Comunicação e autenticação em dois fatores       |
+| Status        | concluída (build verde + 8 de 9 verificações na API)  |
+| Próxima etapa | 14 — Módulos e assinatura                             |
+| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite) |
+| Versão        | 0.0.93                                                |
 
 ## Etapas
 
@@ -29,12 +29,8 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                      |
 | 10  | Financeiro do paciente  | concluída | contas a receber, baixa multi-forma, lote de vencimento, exportação contábil             |
 | 11  | Financeiro gerencial    | concluída | despesas, centro de custo, DRE por competência, fluxo por caixa, aging, régua            |
-| 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
-| 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
-| 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
-| 11  | Financeiro gerencial    | pendente  | despesas, DRE, fluxo 90 dias, aging                                                      |
-| 12  | Relatórios operacionais | pendente  | painel, faltas, produção                                                                 |
-| 13  | Comunicação             | pendente  | lembretes de consulta, retorno e aniversário                                             |
+| 12  | Relatórios operacionais | concluída | painel, faltas por dia/horário/paciente, produção, PDF do prontuário auditado, CSV       |
+| 13  | Comunicação e 2FA       | concluída | lembretes (confirmação 48/24h, retorno, aniversário) e segundo fator por e-mail na conta |
 | 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                                 |
 | 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                                            |
 
