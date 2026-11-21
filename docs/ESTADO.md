@@ -6,33 +6,33 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 ## Situação atual
 
-| Campo         | Valor                                                 |
-| ------------- | ----------------------------------------------------- |
-| Etapa atual   | 13 — Comunicação e autenticação em dois fatores       |
-| Status        | concluída (build verde + 8 de 9 verificações na API)  |
-| Próxima etapa | 14 — Módulos e assinatura                             |
-| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite) |
-| Versão        | 0.0.93                                                |
+| Campo         | Valor                                                            |
+| ------------- | ---------------------------------------------------------------- |
+| Etapa atual   | 15 — Publicação e operação                                       |
+| Status        | concluída (checklist 4/4, backup verificado, produção publicada) |
+| Próxima etapa | — (Fase 1 completa)                                              |
+| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)            |
+| Versão        | 0.0.103                                                          |
 
 ## Etapas
 
-| #   | Etapa                   | Status    | Observação                                                                               |
-| --- | ----------------------- | --------- | ---------------------------------------------------------------------------------------- |
-| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro               |
-| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo                      |
-| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo              |
-| 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários         |
-| 5   | Pacientes               | concluída | cadastro, alertas clínicos com faixa de destaque, responsável legal, anamnese versionada |
-| 6   | Agenda                  | concluída | `agenda_slot` com UNIQUE por profissional e por sala; 4 critérios provados               |
-| 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário        |
-| 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar            |
-| 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                      |
-| 10  | Financeiro do paciente  | concluída | contas a receber, baixa multi-forma, lote de vencimento, exportação contábil             |
-| 11  | Financeiro gerencial    | concluída | despesas, centro de custo, DRE por competência, fluxo por caixa, aging, régua            |
-| 12  | Relatórios operacionais | concluída | painel, faltas por dia/horário/paciente, produção, PDF do prontuário auditado, CSV       |
-| 13  | Comunicação e 2FA       | concluída | lembretes (confirmação 48/24h, retorno, aniversário) e segundo fator por e-mail na conta |
-| 14  | Módulos e assinatura    | pendente  | catálogo de módulos, assinatura por CNPJ                                                 |
-| 15  | Publicação e operação   | pendente  | produção, segredos, backup testado, checklist                                            |
+| #   | Etapa                   | Status    | Observação                                                                                  |
+| --- | ----------------------- | --------- | ------------------------------------------------------------------------------------------- |
+| 1   | Fundação                | concluída | Cliente PocketBase, layout, página inicial, marca vetorial e este registro                  |
+| 2   | Identidade e isolamento | concluída | `tenant` + `users` com `papel`/`tenant_id` travados; 2 tenants demo                         |
+| 3   | Núcleo organizacional   | concluída | unidade, sala, profissional, especialidade (25 CFO), módulos, tenant_modulo                 |
+| 4   | Acesso e auditoria      | concluída | login, guarda de rota por papel, `auditoria_acesso` imutável, gestão de usuários            |
+| 5   | Pacientes               | concluída | cadastro, alertas clínicos com faixa de destaque, responsável legal, anamnese versionada    |
+| 6   | Agenda                  | concluída | `agenda_slot` com UNIQUE por profissional e por sala; 4 critérios provados                  |
+| 7   | Prontuário              | concluída | evolução com cadeia de hash, odontograma por snapshot, sigilo e acesso temporário           |
+| 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar               |
+| 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                         |
+| 10  | Financeiro do paciente  | concluída | contas a receber, baixa multi-forma, lote de vencimento, exportação contábil                |
+| 11  | Financeiro gerencial    | concluída | despesas, centro de custo, DRE por competência, fluxo por caixa, aging, régua               |
+| 12  | Relatórios operacionais | concluída | painel, faltas por dia/horário/paciente, produção, PDF do prontuário auditado, CSV          |
+| 13  | Comunicação e 2FA       | concluída | lembretes (confirmação 48/24h, retorno, aniversário) e segundo fator por e-mail na conta    |
+| 14  | Módulos e assinatura    | concluída | catálogo, assinatura com valor congelado, guarda de escrita, menu filtrado, tela de módulos |
+| 15  | Publicação e operação   | concluída | checklist 4/4 assinado, backup verificado, produção publicada                               |
 
 ## Decisões fechadas
 
