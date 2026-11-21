@@ -24,6 +24,8 @@ import {
   LineChart,
   HandCoins,
   Receipt,
+  Activity,
+  LayoutDashboard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -42,6 +44,12 @@ interface ItemMenu {
 
 const ITENS: ItemMenu[] = [
   { label: 'Início', to: '/', icone: Home, visivel: () => true },
+  {
+    label: 'Painel',
+    to: '/painel',
+    icone: LayoutDashboard,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
   { label: 'Agenda', to: '/agenda', icone: CalendarDays, visivel: () => true },
   { label: 'Pacientes', to: '/pacientes', icone: Contact, visivel: () => true },
   { label: 'Catálogo', to: '/catalogo', icone: BookOpen, visivel: () => true },
@@ -70,6 +78,12 @@ const ITENS: ItemMenu[] = [
     to: '/inadimplencia',
     icone: HandCoins,
     visivel: (papel) => ['proprietario', 'gestor', 'recepcao'].indexOf(papel) >= 0,
+  },
+  {
+    label: 'Faltas e produção',
+    to: '/producao',
+    icone: Activity,
+    visivel: (papel) => ['proprietario', 'gestor', 'dentista'].indexOf(papel) >= 0,
   },
   {
     label: 'Passivo clínico',

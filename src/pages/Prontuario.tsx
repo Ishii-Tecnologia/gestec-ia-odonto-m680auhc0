@@ -19,6 +19,8 @@ import {
   UserPlus,
   History,
   RefreshCw,
+  Download,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -110,6 +112,7 @@ export default function Prontuario() {
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [exportando, setExportando] = useState(false)
 
   // nova evolução / retificação
   const [dialogo, setDialogo] = useState<'nova' | 'retificar' | null>(null)
@@ -333,6 +336,39 @@ export default function Prontuario() {
     }
   }
 
+  /* Exportar em PDF passa pela rota, não pelo print do navegador, por dois
+     motivos: o layout é estável (documento clínico não pode mudar de forma) e,
+     principalmente, a rota grava em auditoria_acesso quem exportou e quando.
+     Exportar pelo print deixaria o dado sair sem trilha — e o prontuário é o
+     dado mais sensível do produto. */
+  async function exportarPdf() {
+    if (!pacienteId) return
+    setExportando(true)
+    setErro('')
+    try {
+      const r = await pb.send(`/backend/v1/prontuario-pdf?paciente_id=${pacienteId}`, {
+        method: 'GET',
+      })
+      const binario = atob(r.pdf_base64)
+      const bytes = new Uint8Array(binario.length)
+      for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i)
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = r.nome_arquivo || 'prontuario.pdf'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      setAviso('PDF exportado e registrado na auditoria.')
+    } catch (err) {
+      setErro(getErrorMessage(err))
+    } finally {
+      setExportando(false)
+    }
+  }
+
   async function revogar(acessoId: string) {
     try {
       await pb.send('/backend/v1/revogar-acesso', {
@@ -361,6 +397,19 @@ export default function Prontuario() {
           Pacientes
         </Button>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void exportarPdf()}
+            disabled={exportando}
+          >
+            {exportando ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="mr-1.5 h-3.5 w-3.5" />
             Imprimir

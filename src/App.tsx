@@ -28,6 +28,8 @@ import Dre from './pages/Dre'
 import FluxoCaixa from './pages/FluxoCaixa'
 import Aging from './pages/Aging'
 import Despesas from './pages/Despesas'
+import Painel from './pages/Painel'
+import FaltasProducao from './pages/FaltasProducao'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -87,6 +89,24 @@ const App = () => (
             {/* financeiro do paciente: recepção opera */}
             <Route path="/contas-receber" element={<ContasReceber />} />
             <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
+
+            {/* painel e relatórios operacionais */}
+            <Route
+              path="/painel"
+              element={
+                <RotaProtegida papeis={PAPEIS_GESTAO}>
+                  <Painel />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="/producao"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <FaltasProducao />
+                </RotaProtegida>
+              }
+            />
 
             {/* financeiro gerencial: só dono e gestor */}
             <Route
