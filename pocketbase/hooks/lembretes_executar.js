@@ -100,7 +100,25 @@ routerAdd(
       }
     }
 
+    /* VALIDA O ENDEREÇO ANTES DE ENVIAR.
+       Descoberto no teste do critério 2: com destinatário malformado o mailer do
+       PocketBase NÃO lança erro — ele registra "recipient dropped"/"email not
+       sent" e segue. Resultado: a linha ficava com status "enviado" e o paciente
+       nunca recebia nada. Silêncio é pior que erro: erro aparece no relatório.
+       Aqui a validação é minha, então a falha é registrada como falha. */
+    const emailValido = (e) => {
+      const s = String(e || '')
+      if (s.length < 6 || s.length > 200) return false
+      const at = s.indexOf('@')
+      if (at <= 0 || at !== s.lastIndexOf('@')) return false
+      const dominio = s.slice(at + 1)
+      if (dominio.indexOf('.') <= 0 || dominio.slice(-1) === '.') return false
+      if (/\s/.test(s)) return false
+      return true
+    }
+
     const enviar = (para, assunto, corpo) => {
+      if (!emailValido(para)) throw new Error('Endereco de e-mail invalido: ' + para)
       const mc = $app.newMailClient()
       const msg = new MailerMessage({
         from: { address: 'nao-responda@gestec.local', name: 'GesTec-IA-Odonto' },

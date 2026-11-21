@@ -42,9 +42,15 @@ routerAdd(
     let linha = null
     let usuarioId = ''
     try {
+      /* FILTRO SÓ POR desafio_hash EXISTENTE, não por usado_em = "".
+         Campo date nasce com valor zero e o filtro `= ""` não casa com ele —
+         descobri isso no código de recuperação, e o mesmo erro estava aqui:
+         ao reaproveitar um código, a linha já usada ficava fora do filtro e a
+         resposta virava "sessão inválida" em vez de "código já usado". Perdia-se
+         o sinal de REPLAY, que é justamente o que a auditoria precisa separar. */
       const vivas = $app.findRecordsByFilter(
         'codigo_segundo_fator',
-        'usado_em = "" && desafio_hash != ""',
+        'desafio_hash != ""',
         '-created',
         500,
         0,
@@ -216,7 +222,7 @@ routerAdd(
     try {
       const vivas = $app.findRecordsByFilter(
         'codigo_segundo_fator',
-        'usado_em = "" && desafio_hash != ""',
+        'desafio_hash != ""',
         '-created',
         500,
         0,

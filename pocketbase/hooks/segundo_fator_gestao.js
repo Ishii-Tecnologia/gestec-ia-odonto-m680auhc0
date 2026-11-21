@@ -259,14 +259,20 @@ routerAdd(
     const alvo = $security.sha256(codigo + '|' + usuario.id)
     let linha = null
     try {
+      /* FILTRO SÓ POR usuario_id, e a seleção em JS.
+         Tentei `recuperacao_usado_em = ""` e não funciona: campo date criado agora
+         nasce com valor zero, e o filtro do PocketBase não casa `""` com esse
+         zero. O sintoma era o pior possível — código de recuperação sempre
+         "inválido", com o código certo na mão. */
       const candidatas = $app.findRecordsByFilter(
         'codigo_segundo_fator',
-        'usuario_id = "' + usuario.id + '" && recuperacao_hash != "" && recuperacao_usado_em = ""',
+        'usuario_id = "' + usuario.id + '" && recuperacao_hash != ""',
         '-created',
         50,
         0,
       )
       for (const c of candidatas) {
+        if (String(c.getString('recuperacao_usado_em') || '').length > 0) continue // já usado
         const valor = c.getString('recuperacao_hash')
         let dif = valor.length === alvo.length ? 0 : 1
         const n = Math.min(valor.length, alvo.length)
