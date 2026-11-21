@@ -213,6 +213,25 @@ routerAdd(
               )
             }
 
+            /* STATUS DO ITEM REENVIADO.
+               Quando o cliente manda `origem_item_id`, ele está dizendo "este
+               item da v2 é o mesmo da v1". Se o original já era 'executado', o
+               novo tem de nascer 'executado' — senão o trabalho feito
+               desaparece da versão corrente e o passivo clínico volta a contar
+               como vendido algo que já foi entregue.
+
+               Foi exatamente o erro da primeira versão desta rota: eu copiava
+               os executados NÃO reenviados, mas rebaixava a 'proposto' os que
+               o cliente reenviava. Os dois caminhos precisam preservar o
+               status, só o status, nunca o resto. */
+            let statusItem = 'proposto'
+            const origemId = String(it.origem_item_id || '')
+            if (origemId && itensAnteriores[origemId]) {
+              const stAnt = itensAnteriores[origemId].getString('status')
+              if (stAnt === 'executado') statusItem = 'executado'
+              else if (stAnt === 'substituido') statusItem = 'substituido'
+            }
+
             const item = new Record(colItem)
             item.set('tenant_id', tenant)
             item.set('fase_id', fase.id)
@@ -222,19 +241,29 @@ routerAdd(
             item.set('quantidade', Math.max(1, Number(it.quantidade) || 1))
             item.set('valor_unitario_centavos', Math.round(valor))
             item.set('observacao', String(it.observacao || '').slice(0, 500))
-            item.set('status', 'proposto')
+            item.set('status', statusItem)
             $app.save(item)
             totalItens++
 
-            // substituição de item da versão anterior
+            /* Substituição: o item da versão anterior ganha status
+               'substituido' e aponta para o novo.
+
+               Isso ALTERA um registro da v1 — e é deliberado. O plano está
+               preservado (existe, com fases, itens e orçamento), mas o item
+               precisa carregar o fato "fui trocado por este". Sem essa marca, a
+               v1 ficaria dizendo que a coroa ainda está proposta, e o histórico
+               mentiria sobre o que aconteceu.
+
+               Nunca rebaixo um item EXECUTADO aqui: `if` só alcança 'proposto'.
+               Executado é fato consumado. */
             const refAnterior = String(it.substitui_item_id || '')
             if (refAnterior && itensAnteriores[refAnterior]) {
               const antigo = itensAnteriores[refAnterior]
               if (antigo.getString('status') === 'proposto') {
                 antigo.set('status', 'substituido')
+                antigo.set('substituido_por_item_id', item.id)
+                $app.save(antigo)
               }
-              antigo.set('substituido_por_item_id', item.id)
-              $app.save(antigo)
               criadosPorChave[refAnterior] = item.id
             }
             if (it.origem_item_id) criadosPorChave[String(it.origem_item_id)] = item.id
@@ -248,6 +277,11 @@ routerAdd(
          apareceria sem o trabalho feito e o passivo clínico sairia errado —
          executado é fato consumado, não desaparece porque alguém mudou o plano. */
       if (planoAnterior) {
+        /* Marca o que já foi tratado nesta rodada para não copiar de novo.
+           São DUAS chaves diferentes:
+             - origem_item_id: o cliente reenviou o item (mantido)
+             - substitui_item_id: o cliente trocou o item (o antigo vira
+               'substituido' e o novo entra no lugar) */
         const reenviados = {}
         for (const f of fases) {
           for (const it of Array.isArray(f.itens) ? f.itens : []) {
