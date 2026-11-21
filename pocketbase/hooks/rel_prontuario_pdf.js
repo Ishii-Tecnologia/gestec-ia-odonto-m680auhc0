@@ -25,7 +25,9 @@
 routerAdd(
   'GET',
   '/backend/v1/prontuario-pdf',
-  (e) => {
+  // `async`: pdf-lib é assíncrona (create/embedFont/save devolvem Promise).
+  // Sem o async, o hook nem carrega — o deploy recusa com erro de sintaxe.
+  async (e) => {
     if (e.hasSuperuserAuth()) return e.forbiddenError('Use o painel do Skip para manutencao.')
     if (!e.auth) return e.unauthorizedError('Autenticacao obrigatoria.')
 
@@ -60,7 +62,8 @@ routerAdd(
     } catch (_) {
       return e.notFoundError('Paciente nao encontrado.')
     }
-    if (paciente.getString('tenant_id') !== tenant) return e.notFoundError('Paciente nao encontrado.')
+    if (paciente.getString('tenant_id') !== tenant)
+      return e.notFoundError('Paciente nao encontrado.')
 
     /* ---- mesma regra de sigilo da Etapa 7 ----
        Ser autor de evolução, ou responsável por atendimento, ou ter acesso
@@ -111,7 +114,11 @@ routerAdd(
       try {
         const acessos = $app.findRecordsByFilter(
           'acesso_prontuario',
-          'paciente_id = "' + pacienteId + '" && concedido_para = "' + e.auth.id + '" && ativo = true',
+          'paciente_id = "' +
+            pacienteId +
+            '" && concedido_para = "' +
+            e.auth.id +
+            '" && ativo = true',
           '-created',
           20,
           0,
@@ -199,11 +206,17 @@ routerAdd(
       }
       function texto(t, opts) {
         const tam = (opts && opts.tam) || 10
-        const f = (opts && opts.negrito) ? negrito : fonte
+        const f = opts && opts.negrito ? negrito : fonte
         const cor = (opts && opts.cor) || rgb(0, 0, 0)
         const linha = String(t === undefined || t === null ? '' : t)
         precisa(tam + 4)
-        pagina.drawText(linha, { x: M + ((opts && opts.x) || 0), y: y, size: tam, font: f, color: cor })
+        pagina.drawText(linha, {
+          x: M + ((opts && opts.x) || 0),
+          y: y,
+          size: tam,
+          font: f,
+          color: cor,
+        })
         y -= tam + 4
       }
       function espaco(h) {
@@ -225,7 +238,9 @@ routerAdd(
       function paragrafo(t, tam) {
         const tamanho = tam || 9
         const maxChars = Math.floor(LARGURA / (tamanho * 0.5))
-        const palavras = String(t || '').replace(/\r/g, '').split(/\s+/)
+        const palavras = String(t || '')
+          .replace(/\r/g, '')
+          .split(/\s+/)
         let linhaAtual = ''
         for (const p of palavras) {
           const tentativa = linhaAtual ? linhaAtual + ' ' + p : p
@@ -252,7 +267,10 @@ routerAdd(
       }
 
       // cabeçalho
-      texto(tenantRec ? tenantRec.getString('nome') : 'GesTec-IA-Odonto', { tam: 14, negrito: true })
+      texto(tenantRec ? tenantRec.getString('nome') : 'GesTec-IA-Odonto', {
+        tam: 14,
+        negrito: true,
+      })
       texto('Prontuario odontologico', { tam: 11, negrito: true, cor: rgb(0.3, 0.3, 0.3) })
       espaco(6)
       linhaHorizontal()
@@ -299,10 +317,10 @@ routerAdd(
 
       // evolução
       texto('Evolucao clinica', { tam: 11, negrito: true })
-      texto(
-        'Registro imutavel, em cadeia de hash. Correcoes sao retificacoes, nunca edicao.',
-        { tam: 8, cor: rgb(0.4, 0.4, 0.4) },
-      )
+      texto('Registro imutavel, em cadeia de hash. Correcoes sao retificacoes, nunca edicao.', {
+        tam: 8,
+        cor: rgb(0.4, 0.4, 0.4),
+      })
       espaco(4)
 
       if (evolucoes.length === 0) {
@@ -365,10 +383,7 @@ routerAdd(
             porCond[cond].push(d)
           }
           for (const cond of Object.keys(porCond)) {
-            texto(
-              (ROT[cond] || cond) + ': ' + porCond[cond].sort().join(', '),
-              { tam: 8.5 },
-            )
+            texto((ROT[cond] || cond) + ': ' + porCond[cond].sort().join(', '), { tam: 8.5 })
           }
         }
       }
@@ -382,7 +397,10 @@ routerAdd(
             (e.auth.getString('nome') || e.auth.getString('email') || 'usuario') +
             ' em ' +
             dataHora(new Date().toISOString()) +
-            '  ·  pagina ' + (i + 1) + ' de ' + totalPag,
+            '  ·  pagina ' +
+            (i + 1) +
+            ' de ' +
+            totalPag,
           { x: M, y: 28, size: 7, font: fonte, color: rgb(0.55, 0.55, 0.55) },
         )
       }
@@ -391,9 +409,7 @@ routerAdd(
     } catch (err) {
       // falhar a geração não pode passar como sucesso
       auditar('tentativa_negada', 'falha ao gerar PDF: ' + String(err).slice(0, 300))
-      return e.badRequestError(
-        'Nao foi possivel gerar o PDF: ' + String(err).slice(0, 300),
-      )
+      return e.badRequestError('Nao foi possivel gerar o PDF: ' + String(err).slice(0, 300))
     }
 
     /* AUDITORIA ANTES DE ENTREGAR.
@@ -410,13 +426,18 @@ routerAdd(
       )
     }
 
-    const nomeArquivo = 'prontuario-' + String(paciente.getString('nome') || 'paciente').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() + '.pdf'
+    const nomeArquivo =
+      'prontuario-' +
+      String(paciente.getString('nome') || 'paciente')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .toLowerCase() +
+      '.pdf'
 
     return e.json(200, {
       ok: true,
       nome_arquivo: nomeArquivo,
       // base64: o cliente baixa e o registro em auditoria já existe
-      pdf_base64: bytes ? bytes.toString ? bytes.toString('base64') : '' : '',
+      pdf_base64: bytes ? (bytes.toString ? bytes.toString('base64') : '') : '',
       evolucoes: evolucoes.length,
       alertas: alertas.length,
       auditado: true,
