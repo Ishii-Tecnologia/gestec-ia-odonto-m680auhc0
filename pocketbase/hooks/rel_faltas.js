@@ -131,11 +131,19 @@ routerAdd(
       return d > 0 ? Math.round((n / d) * 1000) / 10 : 0
     }
 
+    /* SEM spread (`...p`) aqui: o transpilador do JSVM gera uma referência a
+       `__spreadValues`, que não existe em runtime e derruba a rota com
+       ReferenceError. Copio campo a campo. */
     const pacientes = Object.keys(porPaciente)
       .map((k) => {
         const p = porPaciente[k]
         return {
-          ...p,
+          id: p.id,
+          nome: p.nome,
+          total: p.total,
+          faltou: p.faltou,
+          cancelado: p.cancelado,
+          atendido: p.atendido,
           taxa_falta: pct(p.faltou + p.cancelado, p.total),
           perdeu_centavos: 0, // preenchido abaixo quando houver valor
         }
@@ -166,14 +174,27 @@ routerAdd(
     const dias = Object.keys(porDia)
       .map((k) => {
         const d = porDia[k]
-        return { ...d, taxa_falta: pct(d.faltou + d.cancelado, d.total) }
+        return {
+          dia: d.dia,
+          ordem: d.ordem,
+          total: d.total,
+          faltou: d.faltou,
+          cancelado: d.cancelado,
+          taxa_falta: pct(d.faltou + d.cancelado, d.total),
+        }
       })
       .sort((a, b) => a.ordem - b.ordem)
 
     const horas = Object.keys(porHora)
       .map((k) => {
         const hh = porHora[k]
-        return { ...hh, taxa_falta: pct(hh.faltou + hh.cancelado, hh.total) }
+        return {
+          faixa: hh.faixa,
+          total: hh.total,
+          faltou: hh.faltou,
+          cancelado: hh.cancelado,
+          taxa_falta: pct(hh.faltou + hh.cancelado, hh.total),
+        }
       })
       .sort((a, b) => a.faixa.localeCompare(b.faixa))
 
