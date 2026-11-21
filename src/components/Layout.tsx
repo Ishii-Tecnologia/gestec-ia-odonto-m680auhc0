@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Mail,
   Package,
+  BellRing,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -48,6 +49,14 @@ interface ItemMenu {
 
 const ITENS: ItemMenu[] = [
   { label: 'Início', to: '/', icone: Home, visivel: () => true },
+  /* Avisos ficam no topo da lista, logo depois do Início: é a primeira coisa
+     que quem abre o sistema de manhã precisa ver. */
+  {
+    label: 'Avisos',
+    to: '/avisos',
+    icone: BellRing,
+    visivel: (papel) => ['proprietario', 'gestor', 'recepcao'].indexOf(papel) >= 0,
+  },
   {
     label: 'Painel',
     to: '/painel',

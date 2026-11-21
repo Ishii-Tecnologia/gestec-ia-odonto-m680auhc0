@@ -33,6 +33,7 @@ import FaltasProducao from './pages/FaltasProducao'
 import Seguranca from './pages/Seguranca'
 import ModelosMensagem from './pages/ModelosMensagem'
 import Modulos from './pages/Modulos'
+import Avisos from './pages/Avisos'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { ModulosProvider } from './contexts/ModulosContext'
@@ -108,6 +109,9 @@ const App = () => (
                   </RotaProtegida>
                 }
               />
+
+              {/* avisos operacionais: qualquer perfil que atende no balcão */}
+              <Route path="/avisos" element={<Avisos />} />
 
               {/* módulos e assinatura */}
               <Route
