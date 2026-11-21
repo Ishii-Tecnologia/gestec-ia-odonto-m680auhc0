@@ -259,11 +259,33 @@ routerAdd(
           y -= tamanho + 3
         }
       }
+      /* DATA NO FORMATO BRASILEIRO, À MÃO.
+         `toLocaleString('pt-BR')` não funciona no goja: ele ignora o locale e
+         devolve o formato americano (11/20/2026). Num documento clínico
+         impresso, 11/20 não é ambíguo só por estética — 11/12 é 11 de dezembro
+         em inglês e 12 de novembro em português. Formato é dado, não decoração.
+
+         Converto para UTC-3 (Brasília, sem horário de verão desde 2019) e monto
+         dd/mm/aaaa hh:mm. */
       function dataHora(iso) {
         if (!iso) return '—'
         const d = new Date(String(iso).replace(' ', 'T'))
         if (isNaN(d.getTime())) return String(iso)
-        return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        const t = new Date(d.getTime() - 3 * 60 * 60 * 1000)
+        function p2(n) {
+          return n < 10 ? '0' + n : String(n)
+        }
+        return (
+          p2(t.getUTCDate()) +
+          '/' +
+          p2(t.getUTCMonth() + 1) +
+          '/' +
+          t.getUTCFullYear() +
+          ' ' +
+          p2(t.getUTCHours()) +
+          ':' +
+          p2(t.getUTCMinutes())
+        )
       }
 
       // cabeçalho
