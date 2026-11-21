@@ -6,13 +6,13 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 ## Situação atual
 
-| Campo         | Valor                                                            |
-| ------------- | ---------------------------------------------------------------- |
-| Etapa atual   | 15 — Publicação e operação                                       |
-| Status        | concluída (checklist 4/4, backup verificado, produção publicada) |
-| Próxima etapa | — (Fase 1 completa)                                              |
-| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)            |
-| Versão        | 0.0.103                                                          |
+| Campo         | Valor                                                               |
+| ------------- | ------------------------------------------------------------------- |
+| Etapa atual   | Fase 1 concluída + auditoria de qualidade                           |
+| Status        | 15 etapas completas · fluxo operacional 11/11 · avisos operacionais |
+| Próxima etapa | Fase 2 (TISS, NGS2, CRUDs faltantes)                                |
+| Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)               |
+| Versão        | 0.0.112                                                             |
 
 ## Etapas
 
@@ -33,6 +33,28 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 13  | Comunicação e 2FA       | concluída | lembretes (confirmação 48/24h, retorno, aniversário) e segundo fator por e-mail na conta    |
 | 14  | Módulos e assinatura    | concluída | catálogo, assinatura com valor congelado, guarda de escrita, menu filtrado, tela de módulos |
 | 15  | Publicação e operação   | concluída | checklist 4/4 assinado, backup verificado, produção publicada                               |
+
+## Auditoria de qualidade (21/11/2026)
+
+Detalhes em `artifacts/gestec/12-auditoria-qualidade.md`.
+
+**Bugs graves corrigidos:**
+
+- Paciente nascia `ativo=false` e **não podia ser agendado** — o elo cadastro→agenda
+  estava quebrado desde a Etapa 5. Corrigido em `hooks/ativo_padrao.js` (request
+  hook, porque no model hook campo bool ausente já vale `false`) + backfill 0044.
+- Tabela de preço particular **vencida há 6 meses**: clínica não conseguia cobrar
+  particular. Corrigido na 0045, com aviso automático criado.
+- Proprietário **não conseguia redefinir 2FA nem senha** de funcionário — quem
+  perdia o e-mail ficava fora para sempre. Rota `redefinir-acesso-usuario` criada.
+- Contas demo quebradas pelos próprios testes (senha e 2FA alterados). Reset na 0043.
+
+**Fluxo validado 11/11:** paciente → agenda → atendido → evolução → preço → plano →
+orçamento → aprovação → títulos → recebimento → título `pago`.
+Script: `work/qualidade/a3_final.py`.
+
+**Tela nova:** Avisos (`/avisos`) — tabela vencida/vencendo, procedimento sem preço,
+convênio descoberto. Ela encontrou 2 procedimentos sem preço em tabela vigente.
 
 ## Decisões fechadas
 
