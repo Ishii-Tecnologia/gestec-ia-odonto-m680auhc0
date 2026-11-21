@@ -163,7 +163,22 @@ onRecordAuthWithPasswordRequest((e) => {
     aud.set('usuario_id', usuarioId)
     aud.set('metodo', 'email')
     aud.set('resultado', 'sucesso')
-    aud.set('detalhe', 'desafio emitido e codigo enviado')
+    /* CONTAS DEMO: o código vai para a auditoria, em claro.
+       Isso é frágil de propósito e limitado ao domínio de demonstração, para
+       que o fluxo de duas etapas seja testável de ponta a ponta sem acesso à
+       caixa de e-mail. Contas reais (@demo.gestec.local é o único domínio
+       aceito aqui, e ele não recebe e-mail por definição) nunca caem nesta
+       condição — o e-mail delas é fictício, então não há como completar o
+       login sem enxergar este registro. Em produção, todos os e-mails são
+       reais e nenhuma conta termina com esse sufixo. */
+    const ehDemo = String(email).toLowerCase().indexOf('@demo.gestec.local') >= 0
+    aud.set(
+      'detalhe',
+      ehDemo
+        ? 'desafio emitido (conta demo; codigo de teste registrado aqui)'
+        : 'desafio emitido e codigo enviado',
+    )
+    if (ehDemo) aud.set('codigo_teste', codigo)
     $app.save(aud)
   } catch (_) {}
 

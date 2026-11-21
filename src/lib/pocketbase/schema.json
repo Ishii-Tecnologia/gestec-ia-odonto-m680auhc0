@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T10:55:43.696Z",
+  "generatedAt": "2026-11-21T10:57:30.119Z",
   "collections": [
     {
       "name": "users",
@@ -3937,6 +3937,12 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "codigo_teste",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

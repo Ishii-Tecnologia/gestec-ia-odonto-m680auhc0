@@ -138,6 +138,11 @@ migrate(
           },
           { name: 'ip', type: 'text', required: false, max: 45 },
           { name: 'detalhe', type: 'text', required: false, max: 300 },
+          /* Só é preenchido para contas de demonstração (@demo.gestec.local),
+             cujo e-mail é fictício e portanto não recebe nada. Serve para
+             testar o fluxo de duas etapas de ponta a ponta. Ver o comentário em
+             segundo_fator_login.js. */
+          { name: 'codigo_teste', type: 'text', required: false, max: 10 },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
           { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
         ],
