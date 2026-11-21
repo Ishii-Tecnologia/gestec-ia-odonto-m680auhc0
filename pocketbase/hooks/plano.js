@@ -203,13 +203,33 @@ routerAdd(
 
             /* O preço vem do cliente JÁ RESOLVIDO pela rota resolver-preco, e
                fica gravado como snapshot. Se eu recalcular aqui, um reajuste de
-               tabela reescreveria orçamento já apresentado ao paciente. */
+               tabela reescreveria orçamento já apresentado ao paciente.
+
+               MENSAGEM SEPARADA POR CAUSA (correção da auditoria): antes, tanto
+               "o cliente não mandou o valor" quanto "não existe preço na tabela"
+               resultavam em "Resolva o preco antes de salvar". A segunda causa
+               é problema de cadastro do dono; a primeira é bug de cliente da
+               API. Dizer a mesma frase para as duas manda a pessoa procurar
+               preço quando o problema é o campo que faltou no corpo. */
+            const temCampo =
+              it.valor_unitario_centavos !== undefined &&
+              it.valor_unitario_centavos !== null &&
+              it.valor_unitario_centavos !== ''
             const valor = Number(it.valor_unitario_centavos)
+
+            if (!temCampo) {
+              return e.badRequestError(
+                'O item (' +
+                  proc.getString('nome') +
+                  ') chegou sem valor_unitario_centavos. Resolva o preco pela rota /backend/v1/resolver-preco antes de salvar o plano.',
+              )
+            }
             if (isNaN(valor) || valor < 0) {
               return e.badRequestError(
-                'Item sem preco definido (' +
+                'Valor invalido no item (' +
                   proc.getString('nome') +
-                  '). Resolva o preco antes de salvar.',
+                  '): ' +
+                  it.valor_unitario_centavos,
               )
             }
 

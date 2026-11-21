@@ -1,69 +1,61 @@
-/* Paciente nasce ativo (Etapa 5 — bug encontrado na auditoria de qualidade)
+/* Registros nascem ativos (Etapa 5 — bug grave encontrado na auditoria)
 
-   O BUG, e por que ele é grave:
+   O BUG, reproduzido em teste:
 
-   O campo `paciente.ativo` nasce com valor zero (`false`) quando o cliente não
-   o envia — e a tela de cadastro NÃO envia. Só que o hook de agendamento
-   (`agendar.js`, Etapa 6) recusa com "Paciente inativo." justamente quem tem
-   `ativo === false`, para não agendar em paciente desligado.
+   `paciente.ativo` nasce `false` quando o cliente não envia o campo, e a tela
+   de cadastro não envia. O hook de agendamento (`agendar.js`) recusa com
+   "Paciente inativo." exatamente quem tem `ativo === false`. Resultado: a
+   recepção cadastra a paciente, vai marcar a consulta e recebe "Paciente
+   inativo" — o caminho de cadastro NUNCA leva ao agendamento. Nenhum teste de
+   etapa isolada pega isso, porque cada etapa funciona sozinha.
 
-   Resultado no fluxo real, reproduzido: a recepção cadastra a paciente nova,
-   vai marcar a consulta dela e recebe "Paciente inativo". O caminho de cadastro
-   nunca levou ao agendamento — o elo entre a Etapa 5 e a Etapa 6 estava
-   quebrado, e nenhum teste de etapa isolada pegaria isso.
+   POR QUE `onRecordCreateRequest` E NÃO `onRecordCreate`:
 
-   POR QUE CORRIGIR NO SERVIDOR, e não na tela:
+   Tentei primeiro o hook de MODELO com `e.record.get('ativo') === undefined`.
+   Não funciona: no hook de modelo o registro já passou pelo schema e um campo
+   bool ausente vale `false`, não `undefined`. A condição nunca era verdadeira e
+   o hook não fazia nada — silenciosamente.
 
-   1. A tela é um dos caminhos. Importação CSV, script, outro cliente da API —
-      todos criariam paciente inativo. O padrão tem de estar no modelo.
-   2. `ativo` não é escolha do usuário no cadastro: quem acabou de chegar está
-      ativo por definição. Desativar é ação posterior e deliberada.
+   O hook de REQUEST tem o corpo da requisição (`e.requestInfo().body`), e ali
+   sim dá para distinguir "não mandou o campo" de "mandou falso". Uso o corpo,
+   não o record.
 
-   `onRecordCreate` (model hook) roda em qualquer `$app.save()` de criação,
-   então cobre todos os caminhos de uma vez.
+   POR QUE NO SERVIDOR E NÃO NA TELA: a tela é um caminho entre vários. CSV,
+   script, integração — todos criariam paciente inativo. O padrão pertence ao
+   modelo, não ao formulário. E `ativo` não é escolha no cadastro: quem acabou
+   de chegar está ativo. Desativar é ação posterior e deliberada. */
 
-   CUIDADO COM A DIFERENÇA DE `false` EXPLÍCITO: se o cliente mandar
-   `ativo: false` de propósito, respeito. Uso `get('ativo') === undefined` para
-   distinguir "não informado" de "informado como falso" — `getBool` devolveria
-   false nos dois casos e eu sobrescreveria uma decisão legítima. */
+onRecordCreateRequest(
+  (e) => {
+    /* `Object.prototype.hasOwnProperty` no corpo: se a chave não veio, o
+       registro nasce ativo. Se veio `false`, é decisão do usuário e respeito. */
+    let mandou = false
+    try {
+      const body = e.requestInfo().body || {}
+      mandou = Object.prototype.hasOwnProperty.call(body, 'ativo')
+    } catch (_) {
+      mandou = false
+    }
+    if (!mandou) {
+      e.record.set('ativo', true)
+    }
+    return e.next()
+  },
+  'paciente',
+  'profissional',
+  'users',
+)
 
-onRecordCreate((e) => {
-  // Só age quando o campo não veio: `get` devolve undefined para ausente.
-  if (e.record.get('ativo') === undefined) {
-    e.record.set('ativo', true)
+/* `sala` usa `ativa` (feminino) — inconsistência da Etapa 3, registrada como
+   dívida. Corrigir o nome quebraria consultas existentes; o certo é conviver. */
+onRecordCreateRequest((e) => {
+  let mandou = false
+  try {
+    const body = e.requestInfo().body || {}
+    mandou = Object.prototype.hasOwnProperty.call(body, 'ativa')
+  } catch (_) {
+    mandou = false
   }
-  return e.next()
-}, 'paciente')
-
-/* Mesmo problema, mesmo raciocínio, nas outras entidades operacionais que têm
-   campo de ativação: profissional, sala e usuário convidado. Um profissional
-   criado sem `ativo` também não poderia ser agendado (o agendar.js recusa
-   `prof.ativo === false`), e uma sala sem `ativa` seria recusada igual.
-
-   Fica em arquivo separado? Não: mesmo assunto, mesmo arquivo, hooks distintos.
-   O guia recomenda um hook por arquivo por causa do isolamento de escopo do
-   JSVM, mas múltiplos registros no topo do arquivo são permitidos — cada
-   callback é autocontido, sem helper compartilhado. */
-
-onRecordCreate((e) => {
-  if (e.record.get('ativo') === undefined) e.record.set('ativo', true)
-  return e.next()
-}, 'profissional')
-
-/* `sala` usa o campo `ativa` (feminino) — inconsistência da Etapa 3, registrada
-   como dívida. Corrigir o nome agora quebraria consultas existentes; o certo é
-   conviver e tratar os dois no código, como o agendar.js já faz. */
-onRecordCreate((e) => {
-  if (e.record.get('ativa') === undefined) e.record.set('ativa', true)
+  if (!mandou) e.record.set('ativa', true)
   return e.next()
 }, 'sala')
-
-onRecordCreate((e) => {
-  if (e.record.get('ativo') === undefined) e.record.set('ativo', true)
-  return e.next()
-}, 'users')
-
-/* E os que JÁ foram criados errados: a recepção tem pacientes inativos criados
-   antes desta correção, e eles continuam impossíveis de agendar. O backfill
-   fica numa migration (0044), não aqui — hook de criação não corrige o
-   passado. */
