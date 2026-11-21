@@ -26,9 +26,10 @@ import { Logo } from '@/components/Logo'
 import { BRAND } from '@/lib/brand'
 import { entrar, verificarSegundoFator, reenviarCodigo, recuperarAcesso } from '@/lib/auth'
 import type { Sessao } from '@/lib/auth'
+import pb from '@/lib/pocketbase/client'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 
-type Passo = 'credenciais' | 'codigo' | 'recuperacao'
+type Passo = 'credenciais' | 'codigo' | 'recuperacao' | 'redefinir'
 
 export default function Entrar() {
   const [passo, setPasso] = useState<Passo>('credenciais')
@@ -44,6 +45,7 @@ export default function Entrar() {
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [pedidoEnviado, setPedidoEnviado] = useState(false)
 
   const navegar = useNavigate()
   const local = useLocation() as { state?: { de?: string } }
@@ -106,6 +108,43 @@ export default function Entrar() {
     }
   }
 
+  /* Pedido de redefinição por e-mail.
+
+     MENSAGEM ÚNICA, DE PROPÓSITO: o texto de sucesso é idêntico exista ou não
+     conta com aquele e-mail. Se a tela respondesse "e-mail não encontrado",
+     qualquer pessoa poderia descobrir quem tem conta na clínica digitando
+     endereços, e numa clínica odontológica a lista de pacientes já é dado
+     sensível por si. O PocketBase responde 204 nos dois casos; eu não olho a
+     resposta para decidir a mensagem. */
+  async function pedirRedefinicao(e: FormEvent) {
+    e.preventDefault()
+    setErro('')
+    if (!email.trim()) {
+      setErro('Digite o seu e-mail.')
+      return
+    }
+    setEnviando(true)
+    try {
+      await pb.collection('users').requestPasswordReset(email.trim().toLowerCase())
+    } catch (err) {
+      /* Só cai aqui em falha de rede ou limite de envio. Nesses casos mostro o
+         erro real, porque aí o e-mail de fato não saiu e a pessoa precisa
+         saber — dizer "verifique sua caixa" quando nada foi enviado faz ela
+         esperar para sempre. */
+      const msg = getErrorMessage(err)
+      if (msg && msg.indexOf('Muitas tentativas') < 0 && !/rate/i.test(msg)) {
+        setErro(msg)
+        setEnviando(false)
+        return
+      }
+      setErro(msg)
+      setEnviando(false)
+      return
+    }
+    setPedidoEnviado(true)
+    setEnviando(false)
+  }
+
   async function enviarRecuperacao(e: FormEvent) {
     e.preventDefault()
     setErro('')
@@ -131,7 +170,9 @@ export default function Entrar() {
               ? 'Entre com o seu acesso da clínica'
               : passo === 'codigo'
                 ? 'Confirme que é você'
-                : 'Recuperar acesso'}
+                : passo === 'redefinir'
+                  ? 'Redefinir senha'
+                  : 'Recuperar acesso'}
           </p>
         </div>
       </div>
@@ -176,19 +217,42 @@ export default function Entrar() {
                   {enviando ? 'Entrando…' : 'Entrar'}
                 </Button>
               </form>
-              <p className="mt-4 text-center text-xs text-muted-foreground">
-                <button
-                  type="button"
-                  className="underline"
-                  onClick={() => {
-                    setErro('')
-                    setCodigo('')
-                    setPasso('recuperacao')
-                  }}
-                >
-                  Não consigo acessar meu e-mail
-                </button>
-              </p>
+              {/* TRÊS CAMINHOS, e a ordem em que aparecem não é acidental:
+                  o mais comum primeiro. "Esqueci minha senha" resolve a maioria
+                  (é o primeiro acesso do convidado). "Não recebi o e-mail" é o
+                  caso de já ter conta e ter perdido a senha. O código de
+                  recuperação é o último recurso de quem perdeu o e-mail — só
+                  existe para quem já ativou a verificação em duas etapas, e é
+                  por isso que vem por último, discreto. */}
+              <div className="mt-4 space-y-2 text-center text-xs">
+                <p className="text-muted-foreground">
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => {
+                      setErro('')
+                      setAviso('')
+                      setPasso('redefinir')
+                    }}
+                  >
+                    Esqueci minha senha
+                  </button>
+                </p>
+                <p className="text-muted-foreground">
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => {
+                      setErro('')
+                      setCodigo('')
+                      setPasso('recuperacao')
+                    }}
+                  >
+                    Perdi o acesso ao meu e-mail
+                  </button>
+                  <span className="ml-1 text-[11px]">(quem usa verificação em duas etapas)</span>
+                </p>
+              </div>
             </CardContent>
           </>
         )}
@@ -272,6 +336,84 @@ export default function Entrar() {
                   </button>
                 </div>
               </form>
+            </CardContent>
+          </>
+        )}
+
+        {passo === 'redefinir' && (
+          <>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Mail className="h-4 w-4" />
+                Redefinir senha
+              </CardTitle>
+              <CardDescription>
+                {pedidoEnviado
+                  ? 'Confira a sua caixa de entrada.'
+                  : 'Enviaremos um link para você criar uma nova senha.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pedidoEnviado ? (
+                <div className="space-y-4">
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      Se existir uma conta com <strong>{email.trim().toLowerCase()}</strong>, o link
+                      para definir a nova senha chegará em instantes. Ele vale por uma hora e serve
+                      uma vez só.
+                    </AlertDescription>
+                  </Alert>
+                  <p className="text-xs text-muted-foreground">
+                    Não chegou? Confira o lixo eletrônico e o endereço digitado. Se o e-mail estiver
+                    certo, peça ao responsável da clínica para liberar o seu acesso.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setPedidoEnviado(false)
+                      setPasso('credenciais')
+                    }}
+                  >
+                    Voltar para o login
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={pedirRedefinicao} className="space-y-4">
+                  {erro && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{erro}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email-red">E-mail da conta</Label>
+                    <Input
+                      id="email-red"
+                      type="email"
+                      autoComplete="username"
+                      value={email}
+                      onChange={(ev) => setEmail(ev.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={enviando}>
+                    {enviando ? 'Enviando…' : 'Enviar link'}
+                  </Button>
+                  <button
+                    type="button"
+                    className="mx-auto flex items-center gap-1 text-xs text-muted-foreground underline"
+                    onClick={() => {
+                      setPasso('credenciais')
+                      setErro('')
+                    }}
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Voltar para o login
+                  </button>
+                </form>
+              )}
             </CardContent>
           </>
         )}

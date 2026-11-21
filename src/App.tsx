@@ -36,6 +36,7 @@ import Modulos from './pages/Modulos'
 import Avisos from './pages/Avisos'
 import Convenios from './pages/Convenios'
 import CentrosCusto from './pages/CentrosCusto'
+import ResetSenha from './pages/ResetSenha'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { ModulosProvider } from './contexts/ModulosContext'
@@ -118,6 +119,14 @@ const App = () => (
               {/* cadastros de apoio: convênio e centro de custo */}
               <Route path="/convenios" element={<Convenios />} />
               <Route path="/centros-custo" element={<CentrosCusto />} />
+
+              {/* Redefinição de senha pelo link do e-mail. O caminho
+                  `/reset-password` é fixo na plataforma Skip: é para onde o
+                  placeholder {RESET_URL} aponta. A rota `/redefinir-senha` fica
+                  como alias curto, porque é o nome que eu usaria se
+                  escrevesse o link à mão. */}
+              <Route path="/reset-password" element={<ResetSenha />} />
+              <Route path="/redefinir-senha" element={<ResetSenha />} />
 
               {/* módulos e assinatura */}
               <Route
