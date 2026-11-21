@@ -147,6 +147,96 @@ routerAdd(
   $apis.requireAuth(),
 )
 
+/* REGERAR CÓDIGOS DE RECUPERAÇÃO.
+   Descoberto testando a tela: a recepção ficou com 0 códigos depois de gastar
+   os gerados na ativação. Sem esta rota, a conta fica a um e-mail perdido do
+   lockout — e o único caminho seria o proprietário redefinir tudo.
+
+   Invalida TODOS os anteriores e emite 8 novos. Emitir sem invalidar deixaria
+   códigos antigos vivos, e a pessoa não saberia quais ainda valem. */
+routerAdd(
+  'POST',
+  '/backend/v1/regerar-codigos-recuperacao',
+  (e) => {
+    if (e.hasSuperuserAuth()) return e.forbiddenError('Use o painel do Skip.')
+    if (!e.auth) return e.unauthorizedError('Autenticacao obrigatoria.')
+
+    const body = e.requestInfo().body || {}
+    const senha = String(body.senha || '')
+    if (!senha) return e.badRequestError('Informe sua senha.')
+
+    let usuario
+    try {
+      usuario = $app.findRecordById('_pb_users_auth_', e.auth.id)
+    } catch (_) {
+      return e.notFoundError('Usuario nao encontrado.')
+    }
+
+    let senhaOk = false
+    try {
+      senhaOk = usuario.validatePassword(senha) === true
+    } catch (_) {}
+    if (!senhaOk) return e.badRequestError('Senha incorreta.')
+
+    if (usuario.getBool('two_factor_ativo') !== true) {
+      return e.badRequestError('Ative a verificacao em duas etapas primeiro.')
+    }
+
+    // invalida os que sobraram
+    try {
+      $app
+        .db()
+        .newQuery(
+          'UPDATE codigo_segundo_fator SET recuperacao_hash = "" WHERE usuario_id = {:u} AND recuperacao_usado_em = ""',
+        )
+        .bind({ u: usuario.id })
+        .execute()
+    } catch (_) {}
+
+    const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    const claros = []
+    const col = $app.findCollectionByNameOrId('codigo_segundo_fator')
+
+    for (let i = 0; i < 8; i++) {
+      let bruto = ''
+      try {
+        bruto = $security.randomStringWithAlphabet(10, ALFABETO)
+      } catch (_) {
+        bruto = $security.randomString(10)
+      }
+      const formatado = bruto.slice(0, 5) + '-' + bruto.slice(5, 10)
+      claros.push(formatado)
+      try {
+        const r = new Record(col)
+        r.set('usuario_id', usuario.id)
+        r.set('recuperacao_hash', $security.sha256(formatado + '|' + usuario.id))
+        r.set('codigo_hash', '')
+        $app.save(r)
+      } catch (err) {
+        return e.badRequestError('Falha ao gerar os codigos.')
+      }
+    }
+
+    try {
+      const aud = new Record($app.findCollectionByNameOrId('autenticacao_fator'))
+      aud.set('tenant_id', usuario.getString('tenant_id'))
+      aud.set('usuario_id', usuario.id)
+      aud.set('metodo', 'recuperacao')
+      aud.set('resultado', 'sucesso')
+      aud.set('detalhe', 'codigos de recuperacao regerados (8); anteriores invalidados')
+      $app.save(aud)
+    } catch (_) {}
+
+    return e.json(200, {
+      ok: true,
+      codigos_recuperacao: claros,
+      aviso:
+        'Guarde estes codigos agora. Os anteriores deixaram de valer e estes nao serao mostrados de novo.',
+    })
+  },
+  $apis.requireAuth(),
+)
+
 routerAdd(
   'POST',
   '/backend/v1/desativar-segundo-fator',

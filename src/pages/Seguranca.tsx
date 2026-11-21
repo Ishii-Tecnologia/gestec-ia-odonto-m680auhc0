@@ -133,6 +133,54 @@ export default function Seguranca() {
     }
   }
 
+  async function regerar() {
+    setErro('')
+    setAviso('')
+    if (!senha) {
+      setErro('Digite sua senha para gerar novos códigos.')
+      return
+    }
+    setOcupado(true)
+    try {
+      const r = await pb.send('/backend/v1/regerar-codigos-recuperacao', {
+        method: 'POST',
+        body: { senha },
+      })
+      setCodigos(r.codigos_recuperacao || [])
+      setGuardei(false)
+      setSenha('')
+      await carregar()
+    } catch (err) {
+      setErro(getErrorMessage(err))
+    } finally {
+      setOcupado(false)
+    }
+  }
+
+  async function regerar() {
+    setErro('')
+    setAviso('')
+    if (!senha) {
+      setErro('Digite sua senha para gerar novos códigos.')
+      return
+    }
+    setOcupado(true)
+    try {
+      const r = await pb.send('/backend/v1/regerar-codigos-recuperacao', {
+        method: 'POST',
+        body: { senha },
+      })
+      setCodigos(r.codigos_recuperacao || [])
+      setGuardei(false)
+      setSenha('')
+      await carregar()
+    } catch (err) {
+      setErro(getErrorMessage(err))
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   function copiar() {
     const texto = codigos.join('\n')
     navigator.clipboard.writeText(texto).then(() => {
