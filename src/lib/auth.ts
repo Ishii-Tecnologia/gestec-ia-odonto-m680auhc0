@@ -47,6 +47,11 @@ export const ROTAS_CLINICAS = ['/prontuario', '/odontograma', '/paciente']
 
 export const PAPEIS_CLINICOS: Papel[] = ['proprietario', 'gestor', 'dentista']
 
+/* Gestão = dono e gestor. Usado nas telas gerenciais (DRE, fluxo de caixa,
+   despesas) e na retirada de sócio: são os números da empresa, não da
+   operação do balcão. Recepção opera o dia; gestão enxerga o negócio. */
+export const PAPEIS_GESTAO: Papel[] = ['proprietario', 'gestor']
+
 export interface Sessao {
   id: string
   nome: string

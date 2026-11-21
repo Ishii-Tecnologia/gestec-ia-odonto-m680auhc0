@@ -20,6 +20,10 @@ import {
   Tags,
   TrendingDown,
   Banknote,
+  PieChart,
+  LineChart,
+  HandCoins,
+  Receipt,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -43,6 +47,30 @@ const ITENS: ItemMenu[] = [
   { label: 'Catálogo', to: '/catalogo', icone: BookOpen, visivel: () => true },
   { label: 'Tabelas de preço', to: '/tabelas-preco', icone: Tags, visivel: () => true },
   { label: 'Contas a receber', to: '/contas-receber', icone: Banknote, visivel: () => true },
+  {
+    label: 'Despesas',
+    to: '/despesas',
+    icone: Receipt,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
+  {
+    label: 'DRE',
+    to: '/dre',
+    icone: PieChart,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
+  {
+    label: 'Fluxo de caixa',
+    to: '/fluxo-caixa',
+    icone: LineChart,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
+  {
+    label: 'Inadimplência',
+    to: '/inadimplencia',
+    icone: HandCoins,
+    visivel: (papel) => ['proprietario', 'gestor', 'recepcao'].indexOf(papel) >= 0,
+  },
   {
     label: 'Passivo clínico',
     to: '/passivo-clinico',

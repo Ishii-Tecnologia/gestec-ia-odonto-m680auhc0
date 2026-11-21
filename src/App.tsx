@@ -24,7 +24,11 @@ import PlanoTratamento from './pages/PlanoTratamento'
 import PassivoClinico from './pages/PassivoClinico'
 import ContasReceber from './pages/ContasReceber'
 import ExtratoPaciente from './pages/ExtratoPaciente'
-import { PAPEIS_CLINICOS } from './lib/auth'
+import Dre from './pages/Dre'
+import FluxoCaixa from './pages/FluxoCaixa'
+import Aging from './pages/Aging'
+import Despesas from './pages/Despesas'
+import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
 
@@ -83,6 +87,33 @@ const App = () => (
             {/* financeiro do paciente: recepção opera */}
             <Route path="/contas-receber" element={<ContasReceber />} />
             <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
+
+            {/* financeiro gerencial: só dono e gestor */}
+            <Route
+              path="/dre"
+              element={
+                <RotaProtegida papeis={PAPEIS_GESTAO}>
+                  <Dre />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="/fluxo-caixa"
+              element={
+                <RotaProtegida papeis={PAPEIS_GESTAO}>
+                  <FluxoCaixa />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="/despesas"
+              element={
+                <RotaProtegida papeis={PAPEIS_GESTAO}>
+                  <Despesas />
+                </RotaProtegida>
+              }
+            />
+            <Route path="/inadimplencia" element={<Aging />} />
 
             {/* plano de tratamento e passivo: clínicos */}
             <Route
