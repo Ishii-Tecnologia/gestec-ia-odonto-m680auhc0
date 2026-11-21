@@ -32,8 +32,10 @@ import Painel from './pages/Painel'
 import FaltasProducao from './pages/FaltasProducao'
 import Seguranca from './pages/Seguranca'
 import ModelosMensagem from './pages/ModelosMensagem'
+import Modulos from './pages/Modulos'
 import { PAPEIS_CLINICOS, PAPEIS_GESTAO } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
+import { ModulosProvider } from './contexts/ModulosContext'
 import { RotaProtegida } from './components/RotaProtegida'
 
 const App = () => (
@@ -42,174 +44,189 @@ const App = () => (
       <Toaster />
       <Sonner />
       <SessaoProvider>
-        <Routes>
-          {/* acesso livre */}
-          <Route path="/entrar" element={<Entrar />} />
+        {/* ModulosProvider dentro do SessaoProvider: ele depende de saber quem
+            está logado para consultar /meus-modulos. Fora dele, a consulta sairia
+            sem token e voltaria 401. */}
+        <ModulosProvider>
+          <Routes>
+            {/* acesso livre */}
+            <Route path="/entrar" element={<Entrar />} />
 
-          {/* exige login, mas não exige senha já trocada */}
-          <Route
-            path="/trocar-senha"
-            element={
-              <RotaProtegida>
-                <TrocarSenha />
-              </RotaProtegida>
-            }
-          />
-
-          {/* área autenticada */}
-          <Route
-            element={
-              <RotaProtegida>
-                <Layout />
-              </RotaProtegida>
-            }
-          >
-            <Route path="/" element={<Index />} />
+            {/* exige login, mas não exige senha já trocada */}
             <Route
-              path="/usuarios"
-              element={
-                <RotaProtegida exigeGestao>
-                  <Usuarios />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/auditoria"
-              element={
-                <RotaProtegida exigeAuditoria>
-                  <Auditoria />
-                </RotaProtegida>
-              }
-            />
-            {/* agenda: operada pela recepção */}
-            <Route path="/agenda" element={<Agenda />} />
-
-            {/* catálogo e preços: recepção consulta; quem atende administra */}
-            <Route path="/catalogo" element={<Catalogo />} />
-            <Route path="/tabelas-preco" element={<TabelasPreco />} />
-
-            {/* financeiro do paciente: recepção opera */}
-            <Route path="/contas-receber" element={<ContasReceber />} />
-            <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
-
-            {/* painel e relatórios operacionais */}
-            <Route
-              path="/painel"
-              element={
-                <RotaProtegida papeis={PAPEIS_GESTAO}>
-                  <Painel />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/producao"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <FaltasProducao />
-                </RotaProtegida>
-              }
-            />
-
-            {/* segurança da conta: todo mundo tem conta, todo mundo configura */}
-            <Route
-              path="/seguranca"
+              path="/trocar-senha"
               element={
                 <RotaProtegida>
-                  <Seguranca />
+                  <TrocarSenha />
                 </RotaProtegida>
               }
             />
 
-            {/* modelos de mensagem: só quem administra a clínica */}
+            {/* área autenticada */}
             <Route
-              path="/mensagens"
               element={
-                <RotaProtegida papeis={PAPEIS_GESTAO}>
-                  <ModelosMensagem />
+                <RotaProtegida>
+                  <Layout />
                 </RotaProtegida>
               }
-            />
+            >
+              <Route path="/" element={<Index />} />
+              <Route
+                path="/usuarios"
+                element={
+                  <RotaProtegida exigeGestao>
+                    <Usuarios />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/auditoria"
+                element={
+                  <RotaProtegida exigeAuditoria>
+                    <Auditoria />
+                  </RotaProtegida>
+                }
+              />
+              {/* agenda: operada pela recepção */}
+              <Route path="/agenda" element={<Agenda />} />
 
-            {/* financeiro gerencial: só dono e gestor */}
-            <Route
-              path="/dre"
-              element={
-                <RotaProtegida papeis={PAPEIS_GESTAO}>
-                  <Dre />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/fluxo-caixa"
-              element={
-                <RotaProtegida papeis={PAPEIS_GESTAO}>
-                  <FluxoCaixa />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/despesas"
-              element={
-                <RotaProtegida papeis={PAPEIS_GESTAO}>
-                  <Despesas />
-                </RotaProtegida>
-              }
-            />
-            <Route path="/inadimplencia" element={<Aging />} />
+              {/* catálogo e preços: recepção consulta; quem atende administra */}
+              <Route path="/catalogo" element={<Catalogo />} />
+              <Route path="/tabelas-preco" element={<TabelasPreco />} />
 
-            {/* plano de tratamento e passivo: clínicos */}
-            <Route
-              path="/passivo-clinico"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <PassivoClinico />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/pacientes/:id/plano"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <PlanoTratamento />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/pacientes/:id/plano/:planoId"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <PlanoTratamento />
-                </RotaProtegida>
-              }
-            />
+              {/* financeiro do paciente: recepção opera */}
+              <Route path="/contas-receber" element={<ContasReceber />} />
+              <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
 
-            {/* pacientes: cadastro é da recepção também */}
-            <Route path="/pacientes" element={<Pacientes />} />
-            <Route path="/pacientes/novo" element={<PacienteForm />} />
-            <Route path="/pacientes/:id" element={<PacienteFicha />} />
-            <Route path="/pacientes/:id/editar" element={<PacienteForm />} />
+              {/* painel e relatórios operacionais */}
+              <Route
+                path="/painel"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <Painel />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/producao"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <FaltasProducao />
+                  </RotaProtegida>
+                }
+              />
 
-            {/* rota clínica: recepção e financeiro são bloqueados aqui */}
-            <Route
-              path="/pacientes/:id/prontuario"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <Prontuario />
-                </RotaProtegida>
-              }
-            />
-            <Route
-              path="/prontuario"
-              element={
-                <RotaProtegida papeis={PAPEIS_CLINICOS}>
-                  <Prontuario />
-                </RotaProtegida>
-              }
-            />
-          </Route>
+              {/* segurança da conta: todo mundo tem conta, todo mundo configura */}
+              <Route
+                path="/seguranca"
+                element={
+                  <RotaProtegida>
+                    <Seguranca />
+                  </RotaProtegida>
+                }
+              />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+              {/* modelos de mensagem: só quem administra a clínica */}
+              <Route
+                path="/mensagens"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <ModelosMensagem />
+                  </RotaProtegida>
+                }
+              />
+
+              {/* módulos e assinatura */}
+              <Route
+                path="/modulos"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <Modulos />
+                  </RotaProtegida>
+                }
+              />
+
+              {/* financeiro gerencial: só dono e gestor */}
+              <Route
+                path="/dre"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <Dre />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/fluxo-caixa"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <FluxoCaixa />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/despesas"
+                element={
+                  <RotaProtegida papeis={PAPEIS_GESTAO}>
+                    <Despesas />
+                  </RotaProtegida>
+                }
+              />
+              <Route path="/inadimplencia" element={<Aging />} />
+
+              {/* plano de tratamento e passivo: clínicos */}
+              <Route
+                path="/passivo-clinico"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <PassivoClinico />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/pacientes/:id/plano"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <PlanoTratamento />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/pacientes/:id/plano/:planoId"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <PlanoTratamento />
+                  </RotaProtegida>
+                }
+              />
+
+              {/* pacientes: cadastro é da recepção também */}
+              <Route path="/pacientes" element={<Pacientes />} />
+              <Route path="/pacientes/novo" element={<PacienteForm />} />
+              <Route path="/pacientes/:id" element={<PacienteFicha />} />
+              <Route path="/pacientes/:id/editar" element={<PacienteForm />} />
+
+              {/* rota clínica: recepção e financeiro são bloqueados aqui */}
+              <Route
+                path="/pacientes/:id/prontuario"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <Prontuario />
+                  </RotaProtegida>
+                }
+              />
+              <Route
+                path="/prontuario"
+                element={
+                  <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                    <Prontuario />
+                  </RotaProtegida>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ModulosProvider>
       </SessaoProvider>
     </TooltipProvider>
   </BrowserRouter>

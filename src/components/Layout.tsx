@@ -28,6 +28,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Mail,
+  Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -35,6 +36,7 @@ import { BRAND } from '@/lib/brand'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSessao } from '@/contexts/SessaoContext'
+import { MENU_POR_MODULO, useModulos } from '@/contexts/ModulosContext'
 import { podeGerenciarUsuarios, podeVerAuditoria, rotuloPapel, sair } from '@/lib/auth'
 
 interface ItemMenu {
@@ -102,6 +104,12 @@ const ITENS: ItemMenu[] = [
     visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
   },
   {
+    label: 'Módulos',
+    to: '/modulos',
+    icone: Package,
+    visivel: (papel) => ['proprietario', 'gestor'].indexOf(papel) >= 0,
+  },
+  {
     label: 'Passivo clínico',
     to: '/passivo-clinico',
     icone: TrendingDown,
@@ -123,7 +131,20 @@ const ITENS: ItemMenu[] = [
 
 export default function Layout() {
   const { sessao } = useSessao()
+  /* `tem` consulta o módulo contratado. Item de menu cujo módulo não está ativo
+     desaparece — é o critério 1 da Etapa 14. O servidor continua sendo a
+     barreira real: a rota responde 403 pela guarda de escrita e o menu é só
+     conveniência. Se a consulta de módulos falhar, `tem` responde true e o menu
+     aparece completo (ver ModulosContext): esconder o menu de quem pagou por
+     causa de um erro de rede seria um bug pior que o problema que ele evita. */
+  const { tem } = useModulos()
   const navegar = useNavigate()
+
+  function liberadoPorModulo(rota: string): boolean {
+    const modulo = MENU_POR_MODULO[rota]
+    if (!modulo) return true // item de núcleo
+    return tem(modulo)
+  }
 
   function sairAgora() {
     sair()
@@ -167,25 +188,27 @@ export default function Layout() {
       <div className="flex flex-1">
         <aside className="hidden w-56 shrink-0 border-r p-3 md:block">
           <nav className="flex flex-col gap-1" aria-label="Navegação principal">
-            {ITENS.filter((i) => i.visivel(sessao?.papel || '')).map((item) => {
-              const Icone = item.icone
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent',
-                      isActive && 'bg-accent font-medium',
-                    )
-                  }
-                >
-                  <Icone className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              )
-            })}
+            {ITENS.filter((i) => i.visivel(sessao?.papel || '') && liberadoPorModulo(i.to)).map(
+              (item) => {
+                const Icone = item.icone
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent',
+                        isActive && 'bg-accent font-medium',
+                      )
+                    }
+                  >
+                    <Icone className="h-4 w-4" />
+                    {item.label}
+                  </NavLink>
+                )
+              },
+            )}
           </nav>
         </aside>
 
