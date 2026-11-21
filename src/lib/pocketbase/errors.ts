@@ -86,6 +86,18 @@ export function extractFieldErrors(error: unknown): FieldErrors {
       const d = detail as { message: string; code?: string }
       const codigo = d.code || ''
       const frase = CODIGO_VALIDACAO[codigo]
+
+      /* O token da redefinição de senha volta como erro de CAMPO, não como
+         mensagem principal — o PocketBase põe em `data.token.message`. Por isso
+         a tradução na função de mensagem não pegava: a tela mostrava
+         "token: Invalid or expired token." para quem perdeu a senha. Quem cai
+         aqui precisa de instrução, não de diagnóstico em inglês. */
+      if (field === 'token' && /invalid or expired token/i.test(d.message)) {
+        errors[field] =
+          'Este link expirou ou já foi usado. Volte à tela de entrada, clique em "Esqueci minha senha" e peça um link novo — ele vale por 1 hora.'
+        continue
+      }
+
       // "CPF já está cadastrado" em vez de "Value must be unique."
       errors[field] = frase ? `${nomeDe(field)} ${frase}.` : `${nomeDe(field)}: ${d.message}`
     }
