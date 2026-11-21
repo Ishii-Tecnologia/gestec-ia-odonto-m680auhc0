@@ -476,8 +476,14 @@ export default function Entrar() {
         )}
       </Card>
 
+      {/* Rodapé reescrito junto com a tela de redefinição. O texto anterior
+          mandava "peça ao responsável", que era a verdade do sistema enquanto
+          não havia link — e virava instrução errada no instante em que passou a
+          haver. Rodapé que contradiz um botão logo acima é pior que rodapé
+          nenhum: a pessoa lê os dois e desiste. */}
       <p className="text-center text-xs text-muted-foreground">
-        Esqueceu a senha? Peça ao responsável da clínica para redefinir.{' '}
+        Primeiro acesso? Use{' '}
+        <span className="font-medium text-foreground">"Esqueci minha senha"</span> para criar a sua.{' '}
         <Link to="/" className="underline">
           Voltar
         </Link>
