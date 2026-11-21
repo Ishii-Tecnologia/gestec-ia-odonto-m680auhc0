@@ -8,11 +8,11 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
-| Etapa atual   | 10 — Financeiro do paciente                                     |
-| Status        | concluída (build verde + 4 critérios testados na API e na tela) |
-| Próxima etapa | 11 — Financeiro gerencial                                       |
+| Etapa atual   | 11 — Financeiro gerencial                                       |
+| Status        | concluída (build verde + 5 critérios testados na API e na tela) |
+| Próxima etapa | 12 — Relatórios operacionais                                    |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)           |
-| Versão        | 0.0.66                                                          |
+| Versão        | 0.0.73                                                          |
 
 ## Etapas
 
@@ -28,6 +28,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | 8   | Catálogo e preços       | concluída | 4 coleções, preço resolvido por item, importação CSV validada antes de gravar            |
 | 9   | Orçamento e execução    | concluída | plano versionado, passivo clínico, cancelamento com crédito/estorno                      |
 | 10  | Financeiro do paciente  | concluída | contas a receber, baixa multi-forma, lote de vencimento, exportação contábil             |
+| 11  | Financeiro gerencial    | concluída | despesas, centro de custo, DRE por competência, fluxo por caixa, aging, régua            |
 | 8   | Catálogo e preços       | pendente  | procedimentos, convênio, tabela de preço                                                 |
 | 9   | Orçamento e execução    | pendente  | plano versionado, passivo clínico, crédito/estorno                                       |
 | 10  | Financeiro do paciente  | pendente  | competência × liquidação, baixa parcial, lote, contador                                  |
@@ -409,6 +410,47 @@ reescreveria o histórico de atraso).
 | Título pago no lote           | ignorado                      | ✔ 0 alterados, 2 ignorados              |
 | Competência ≠ vencimento      | sim                           | ✔ 8 de 8 títulos                        |
 | DELETE de título pela API     | recusado                      | ✔ 403                                   |
+
+## Etapa 11 — DRE por competência, fluxo por caixa
+
+Cinco coleções: `centro_custo`, `despesa`, `fechamento_caixa`, `retirada_socio`,
+`comunicacao`.
+
+**A regra que não pode ser violada:**
+
+| Relatório      | Data usada                             | Pergunta que responde            |
+| -------------- | -------------------------------------- | -------------------------------- |
+| DRE            | `data_competencia`                     | "sobrou alguma coisa neste mês?" |
+| Fluxo de caixa | `data_credito_prevista` e `vencimento` | "vou ter dinheiro no dia 20?"    |
+
+Serviço feito em outubro entra no DRE de outubro mesmo que o paciente pague em
+dezembro. No fluxo, um Pix de hoje não paga a folha do dia 5 se o cartão só
+libera dia 25. **Trocar as duas faz a clínica decidir com dinheiro que não
+existe.**
+
+- `retirada_socio` é coleção separada: pró-labore e distribuição **ficam fora do
+  resultado operacional**. Dentro, a clínica pareceria menos lucrativa e o dono
+  decidiria preço com base num número que já descontou o próprio salário.
+- `fechamento_caixa.valor_sistema_centavos` é **calculado dos pagamentos, nunca
+  digitado**. Se fosse digitável, a diferença sairia zero e o fechamento
+  perderia a função de revelar quebra de caixa. `responsavel` é obrigatório.
+- Margem de contribuição separa **custo direto** (material, laboratório, repasse)
+  de **despesa fixa** (aluguel, folha). Se a margem é positiva e o resultado é
+  negativo, o problema é estrutura, não preço.
+- Aging: cada título em UMA faixa (30/60/90/120+), nunca em duas.
+
+### Etapa 11 — testes
+
+| Teste                                    | Esperado                | Resultado                          |
+| ---------------------------------------- | ----------------------- | ---------------------------------- |
+| DRE fecha com títulos por competência    | igual                   | ✔ R$ 1.150,00 = R$ 1.150,00        |
+| Degraus somam algebricamente             | sim                     | ✔ receita→liquida→margem→resultado |
+| Cartão entra na data de crédito previsto | 19/12, não 19/11        | ✔ R$ 120 em 19/12                  |
+| Aging sem sobreposição de faixas         | sim                     | ✔ soma das faixas = total          |
+| Aging classifica por dias de atraso      | correto                 | ✔ 20d→1-30, 45d→31-60, 95d→91-120  |
+| Fechamento com diferença                 | registra e assina       | ✔ −R$ 5,00, situação "falta"       |
+| Responsável é o usuário logado           | sim                     | ✔ gravado no banco                 |
+| Exportação de despesas                   | categoria e competência | ✔ 10 linhas, 0 em branco           |
 
 ## Pendências
 
