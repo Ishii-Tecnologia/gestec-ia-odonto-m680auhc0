@@ -57,6 +57,19 @@ const App = () => (
             {/* acesso livre */}
             <Route path="/entrar" element={<Entrar />} />
 
+            {/* Redefinição de senha pelo link do e-mail — FORA da área
+                autenticada, e isso não é detalhe de organização: quem clica no
+                link NÃO está logado (é justamente quem perdeu a senha). Eu tinha
+                colocado estas rotas dentro do bloco protegido e o RotaProtegida
+                mandava a pessoa para /entrar — o link do e-mail levaria de volta
+                ao login, exatamente o que ela não consegue passar. Só apareceu
+                ao abrir a rota no navegador; o build passava.
+
+                `/reset-password` é o caminho que o placeholder {RESET_URL} da
+                plataforma gera. `/redefinir-senha` fica como alias. */}
+            <Route path="/reset-password" element={<ResetSenha />} />
+            <Route path="/redefinir-senha" element={<ResetSenha />} />
+
             {/* exige login, mas não exige senha já trocada */}
             <Route
               path="/trocar-senha"
@@ -119,14 +132,6 @@ const App = () => (
               {/* cadastros de apoio: convênio e centro de custo */}
               <Route path="/convenios" element={<Convenios />} />
               <Route path="/centros-custo" element={<CentrosCusto />} />
-
-              {/* Redefinição de senha pelo link do e-mail. O caminho
-                  `/reset-password` é fixo na plataforma Skip: é para onde o
-                  placeholder {RESET_URL} aponta. A rota `/redefinir-senha` fica
-                  como alias curto, porque é o nome que eu usaria se
-                  escrevesse o link à mão. */}
-              <Route path="/reset-password" element={<ResetSenha />} />
-              <Route path="/redefinir-senha" element={<ResetSenha />} />
 
               {/* módulos e assinatura */}
               <Route
