@@ -22,6 +22,8 @@ import Catalogo from './pages/Catalogo'
 import TabelasPreco from './pages/TabelasPreco'
 import PlanoTratamento from './pages/PlanoTratamento'
 import PassivoClinico from './pages/PassivoClinico'
+import ContasReceber from './pages/ContasReceber'
+import ExtratoPaciente from './pages/ExtratoPaciente'
 import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -77,6 +79,10 @@ const App = () => (
             {/* catálogo e preços: recepção consulta; quem atende administra */}
             <Route path="/catalogo" element={<Catalogo />} />
             <Route path="/tabelas-preco" element={<TabelasPreco />} />
+
+            {/* financeiro do paciente: recepção opera */}
+            <Route path="/contas-receber" element={<ContasReceber />} />
+            <Route path="/pacientes/:id/extrato" element={<ExtratoPaciente />} />
 
             {/* plano de tratamento e passivo: clínicos */}
             <Route

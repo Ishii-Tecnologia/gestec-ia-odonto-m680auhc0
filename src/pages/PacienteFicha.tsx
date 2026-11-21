@@ -11,7 +11,15 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil, Plus, AlertTriangle, FileText, ClipboardList } from 'lucide-react'
+import {
+  ArrowLeft,
+  Pencil,
+  Plus,
+  AlertTriangle,
+  FileText,
+  ClipboardList,
+  Banknote,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -260,6 +268,14 @@ export default function PacienteFicha() {
               Plano
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navegar(`/pacientes/${paciente.id}/extrato`)}
+          >
+            <Banknote className="mr-1.5 h-3.5 w-3.5" />
+            Financeiro
+          </Button>
           <Button
             size="sm"
             variant="outline"
