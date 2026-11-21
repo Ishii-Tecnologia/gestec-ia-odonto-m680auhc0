@@ -12,7 +12,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | Status        | 15 etapas completas · fluxo operacional 11/11 · avisos operacionais |
 | Próxima etapa | Fase 2 (TISS, NGS2, CRUDs faltantes)                                |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)               |
-| Versão        | 0.0.112                                                             |
+| Versão        | 0.0.114                                                             |
 
 ## Etapas
 
@@ -55,6 +55,12 @@ Script: `work/qualidade/a3_final.py`.
 
 **Tela nova:** Avisos (`/avisos`) — tabela vencida/vencendo, procedimento sem preço,
 convênio descoberto. Ela encontrou 2 procedimentos sem preço em tabela vigente.
+
+**Cadastros de apoio (v0.0.114):** `/convenios` e `/centros-custo`. Existiam como
+coleção desde as Etapas 8 e 11, mas só davam para popular por migration. Nas duas,
+**desativar em vez de excluir**: convênio e centro de custo são apontados por
+histórico, e apagar reescreveria a DRE. O diálogo de exclusão explica isso antes
+de falhar.
 
 ## Decisões fechadas
 
