@@ -120,6 +120,18 @@ export function getErrorMessage(error: unknown): string {
   if (/too many requests/i.test(msg)) {
     return 'Muitas tentativas em pouco tempo. Aguarde um minuto e tente de novo.'
   }
+  /* Token de redefinição de senha. Aparece quando o link do e-mail vence (a
+     plataforma dá 1h) ou já foi usado uma vez. A mensagem original é
+     "Invalid or expired token." — em inglês, e sem dizer o que fazer. Quem cai
+     aqui é alguém que perdeu a senha; precisa de instrução, não de diagnóstico. */
+  if (/invalid or expired token/i.test(msg)) {
+    return 'Este link expirou ou já foi usado. Volte à tela de entrada, clique em "Esqueci minha senha" e peça um link novo — ele vale por 1 hora.'
+  }
+  /* Confirmação de e-mail em link próprio. O PocketBase valida o token do
+     contato; se houver regra que o recuse, a mensagem fica crua em inglês. */
+  if (/token is invalid/i.test(msg) || /invalid token/i.test(msg)) {
+    return 'O link não é mais válido. Peça um novo ou entre com a sua senha.'
+  }
   if (/the requested resource wasn't found/i.test(msg) || status === 404) {
     return 'Este registro não existe mais ou você não tem acesso a ele.'
   }
