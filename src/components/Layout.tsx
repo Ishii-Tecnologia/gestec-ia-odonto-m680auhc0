@@ -18,6 +18,7 @@ import {
   CalendarDays,
   BookOpen,
   Tags,
+  TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -40,6 +41,12 @@ const ITENS: ItemMenu[] = [
   { label: 'Pacientes', to: '/pacientes', icone: Contact, visivel: () => true },
   { label: 'Catálogo', to: '/catalogo', icone: BookOpen, visivel: () => true },
   { label: 'Tabelas de preço', to: '/tabelas-preco', icone: Tags, visivel: () => true },
+  {
+    label: 'Passivo clínico',
+    to: '/passivo-clinico',
+    icone: TrendingDown,
+    visivel: (papel) => ['proprietario', 'gestor', 'dentista'].indexOf(papel) >= 0,
+  },
   {
     label: 'Usuários',
     to: '/usuarios',

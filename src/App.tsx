@@ -20,6 +20,8 @@ import PacienteFicha from './pages/PacienteFicha'
 import Agenda from './pages/Agenda'
 import Catalogo from './pages/Catalogo'
 import TabelasPreco from './pages/TabelasPreco'
+import PlanoTratamento from './pages/PlanoTratamento'
+import PassivoClinico from './pages/PassivoClinico'
 import { PAPEIS_CLINICOS } from './lib/auth'
 import { SessaoProvider } from './contexts/SessaoContext'
 import { RotaProtegida } from './components/RotaProtegida'
@@ -75,6 +77,32 @@ const App = () => (
             {/* catálogo e preços: recepção consulta; quem atende administra */}
             <Route path="/catalogo" element={<Catalogo />} />
             <Route path="/tabelas-preco" element={<TabelasPreco />} />
+
+            {/* plano de tratamento e passivo: clínicos */}
+            <Route
+              path="/passivo-clinico"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <PassivoClinico />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="/pacientes/:id/plano"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <PlanoTratamento />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="/pacientes/:id/plano/:planoId"
+              element={
+                <RotaProtegida papeis={PAPEIS_CLINICOS}>
+                  <PlanoTratamento />
+                </RotaProtegida>
+              }
+            />
 
             {/* pacientes: cadastro é da recepção também */}
             <Route path="/pacientes" element={<Pacientes />} />

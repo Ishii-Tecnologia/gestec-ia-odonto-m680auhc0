@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil, Plus, AlertTriangle, FileText } from 'lucide-react'
+import { ArrowLeft, Pencil, Plus, AlertTriangle, FileText, ClipboardList } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -243,11 +243,21 @@ export default function PacienteFicha() {
             {!paciente.ativo && ' · inativo'}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {clinico && (
             <Button size="sm" onClick={() => navegar(`/pacientes/${paciente.id}/prontuario`)}>
               <FileText className="mr-1.5 h-3.5 w-3.5" />
               Prontuário
+            </Button>
+          )}
+          {clinico && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navegar(`/pacientes/${paciente.id}/plano`)}
+            >
+              <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
+              Plano
             </Button>
           )}
           <Button
