@@ -12,7 +12,7 @@ Plano completo em `artifacts/gestec/07-plano-de-execucao-consolidado.md` e promp
 | Status        | 15 etapas completas · fluxo operacional 11/11 · avisos operacionais |
 | Próxima etapa | Fase 2 (TISS, NGS2, CRUDs faltantes)                                |
 | Stack         | React + Vite + Skip Cloud (PocketBase v0.36 / SQLite)               |
-| Versão        | 0.0.121                                                             |
+| Versão        | 0.0.122                                                             |
 
 ## Etapas
 
@@ -68,11 +68,18 @@ mandava o convidado usar um caminho que não existia na tela — e `{RESET_URL}`
 plataforma aponta para `/reset-password`, que não existia no app. Todo convidado
 dependia do proprietário ditar uma senha temporária.
 
-**Base separada da demo — pendente de decisão (A/B):** está provado que preview e
-produção são o MESMO banco (logs idênticos, mesmos IDs, mesmo totalItems). O
-caminho para separar é projeto Skip novo replicando as migrations sem os seeds
-demo. Custo e alternativas em `artifacts/gestec/14-separacao-base-clinica.md`.
-O roteiro do primeiro dia está em `13-roteiro-primeiro-dia-piloto.md`.
+**Base separada da demo — projeto 80914 criado (21/11/2026):** está provado que
+preview e produção no 80533 são o MESMO banco (logs idênticos, mesmos IDs, mesmo
+totalItems 1666). A pedido do Panda, criei o projeto **80914 "GesTec Clinica
+(producao isolada)"**, com backend próprio e banco vazio (só `users`). O 80533
+fica como desenvolvimento + demonstração.
+
+A replicação (48 migrations sem os seeds demo, 44 hooks, ~120 arquivos de `src/`)
+**ainda não foi feita** — plano, ordem e armadilhas em
+`artifacts/gestec/14-separacao-base-clinica.md`. Atenção: a migration 0004 mistura
+catálogo (necessário) com piloto demo (a excluir) e precisa ser reescrita.
+
+Roteiro do primeiro dia em `13-roteiro-primeiro-dia-piloto.md`.
 
 ## Decisões fechadas
 
