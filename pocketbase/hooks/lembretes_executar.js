@@ -95,8 +95,17 @@ routerAdd(
       try {
         $app.save(r)
         return r
-      } catch (_) {
-        return false
+      } catch (err) {
+        /* Só "unique" significa "já registrado" (idempotência pelo índice de
+           `chave_dia`). Qualquer outro erro tem de subir: antes ele virava
+           "já enviado", o lembrete era pulado em silêncio e a resposta dizia
+           que foi enviado. A mensagem real do SQLite aqui é
+           "GoError: chave_dia: Value must be unique." — com `unique` minúsculo. */
+        const baixo = String(err).toLowerCase()
+        if (baixo.indexOf('unique') >= 0 || baixo.indexOf('constraint') >= 0) {
+          return false
+        }
+        throw err
       }
     }
 
@@ -135,7 +144,23 @@ routerAdd(
       mc.send(msg)
     }
 
-    const resultado = { confirmacao: 0, retorno: 0, aniversario: 0, falhas: 0, ja_enviados: 0 }
+    /* `erros` guarda o motivo de cada falha. Sem isso a resposta dizia
+       "falhas: 1" e nada mais — e um número sem causa obriga a pessoa a
+       procurar no log do servidor o que ela poderia ler na tela. */
+    const resultado = {
+      confirmacao: 0,
+      retorno: 0,
+      aniversario: 0,
+      falhas: 0,
+      ja_enviados: 0,
+      erros: [],
+    }
+    const anotarErro = (onde, err) => {
+      resultado.falhas++
+      try {
+        resultado.erros.push(onde + ': ' + String(err).slice(0, 200))
+      } catch (_) {}
+    }
     const querTipo = (t) => !filtroTipo || filtroTipo === t
 
     // ---------------- confirmação ----------------
@@ -190,14 +215,24 @@ routerAdd(
               }
               const chave = 'confirmacao|' + pacienteId + '|' + a.id + '|' + antecedencia + 'h'
 
-              const reg = registrar(chave, {
-                tipo: 'confirmacao',
-                paciente_id: pacienteId,
-                agendamento_id: a.id,
-                destinatario: email,
-                assunto: preencher(modelo.assunto, dados),
-                corpo: preencher(modelo.corpo, dados),
-              })
+              /* `registrar` PODE LANÇAR quando o erro não é de unicidade
+                 (ex.: destinatário maior que o campo aceita). Sem este try, o
+                 throw subiria para o catch externo do paciente e a causa se
+                 perderia; com ele, vira falha registrada com motivo. */
+              let reg
+              try {
+                reg = registrar(chave, {
+                  tipo: 'confirmacao',
+                  paciente_id: pacienteId,
+                  agendamento_id: a.id,
+                  destinatario: email,
+                  assunto: preencher(modelo.assunto, dados),
+                  corpo: preencher(modelo.corpo, dados),
+                })
+              } catch (errReg) {
+                anotarErro('confirmacao: registro', errReg)
+                continue
+              }
               if (!reg) {
                 resultado.ja_enviados++
                 continue
@@ -213,8 +248,8 @@ routerAdd(
                 } catch (_) {}
                 resultado.falhas++
               }
-            } catch (_) {
-              resultado.falhas++
+            } catch (err) {
+              anotarErro('confirmacao', err)
             }
           }
         }
@@ -288,13 +323,19 @@ routerAdd(
               dias: String(dias),
               clinica: nomeClinica,
             }
-            const reg = registrar('retorno|' + pac.id + '|' + hojeIso, {
-              tipo: 'retorno',
-              paciente_id: pac.id,
-              destinatario: email,
-              assunto: preencher(modelo.assunto, dados),
-              corpo: preencher(modelo.corpo, dados),
-            })
+            let reg
+            try {
+              reg = registrar('retorno|' + pac.id + '|' + hojeIso, {
+                tipo: 'retorno',
+                paciente_id: pac.id,
+                destinatario: email,
+                assunto: preencher(modelo.assunto, dados),
+                corpo: preencher(modelo.corpo, dados),
+              })
+            } catch (errReg) {
+              anotarErro('retorno: registro', errReg)
+              continue
+            }
             if (!reg) {
               resultado.ja_enviados++
               continue
@@ -310,8 +351,8 @@ routerAdd(
               } catch (_) {}
               resultado.falhas++
             }
-          } catch (_) {
-            resultado.falhas++
+          } catch (err) {
+            anotarErro('retorno', err)
           }
         }
       }
@@ -342,13 +383,19 @@ routerAdd(
             if (!email) continue
 
             const dados = { paciente: pac.getString('nome'), clinica: nomeClinica }
-            const reg = registrar('aniversario|' + pac.id + '|' + hojeIso, {
-              tipo: 'aniversario',
-              paciente_id: pac.id,
-              destinatario: email,
-              assunto: preencher(modelo.assunto, dados),
-              corpo: preencher(modelo.corpo, dados),
-            })
+            let reg
+            try {
+              reg = registrar('aniversario|' + pac.id + '|' + hojeIso, {
+                tipo: 'aniversario',
+                paciente_id: pac.id,
+                destinatario: email,
+                assunto: preencher(modelo.assunto, dados),
+                corpo: preencher(modelo.corpo, dados),
+              })
+            } catch (errReg) {
+              anotarErro('aniversario: registro', errReg)
+              continue
+            }
             if (!reg) {
               resultado.ja_enviados++
               continue
@@ -377,6 +424,7 @@ routerAdd(
       enviados: resultado.confirmacao + resultado.retorno + resultado.aniversario,
       ja_enviados_hoje: resultado.ja_enviados,
       falhas: resultado.falhas,
+      erros: resultado.erros,
       detalhe: resultado,
       aviso:
         'No ambiente de previa o Skip pode registrar o envio como "skipped"; o registro em comunicacao mostra o status real.',
