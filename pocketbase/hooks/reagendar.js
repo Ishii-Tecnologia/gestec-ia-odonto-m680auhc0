@@ -150,8 +150,17 @@ routerAdd(
         } catch (_) {}
       }
 
+      /* Mesmo erro da rota de bloqueio: o SQLite devolve
+         "inicio: Value must be unique; sala_id: Value must be unique."
+         com "unique" em minúscula — o teste por 'UNIQUE' nunca casava e o
+         usuário via o erro cru do motor em vez desta mensagem. */
       const texto = String(err)
-      if (texto.indexOf('UNIQUE') >= 0 || texto.indexOf('idx_slot') >= 0) {
+      const baixo = texto.toLowerCase()
+      if (
+        baixo.indexOf('unique') >= 0 ||
+        texto.indexOf('idx_slot') >= 0 ||
+        baixo.indexOf('constraint') >= 0
+      ) {
         return e.badRequestError('Novo horario indisponivel: ja existe atendimento nesse bloco.')
       }
       return e.badRequestError('Nao foi possivel reservar o novo horario: ' + texto)

@@ -112,8 +112,26 @@ cronAdd('lembretes_diarios', '0 11 * * *', () => {
       $app.save(r)
       return r
     } catch (err) {
-      // índice UNIQUE bateu: outra execução já registrou. Não é erro.
-      return false
+      /* O índice UNIQUE de `chave_dia` é a garantia de idempotência: duas
+         execuções simultâneas do cron passam as duas pela checagem acima e a
+         segunda colide aqui. Nesse caso, "já registrado" é a resposta certa.
+
+         QUALQUER OUTRO erro NÃO pode cair no mesmo ramo. A versão anterior
+         devolvia false para todo erro: um campo obrigatório faltando, um valor
+         fora de um select ou a coleção indisponível viravam "já enviado", o
+         lembrete era silenciosamente pulado e o log contava sucesso. O paciente
+         não recebia nada e ninguém ficava sabendo.
+
+         A mensagem real do SQLite neste runtime é
+             "GoError: chave_dia: Value must be unique."
+         com `unique` em minúscula (mesmo padrão do bug de colisão da agenda).
+         Testo sem depender de maiúscula; se não for isso, PROPAGO o erro e o
+         chamador registra a falha em vez de engolir. */
+      const baixo = String(err).toLowerCase()
+      if (baixo.indexOf('unique') >= 0 || baixo.indexOf('constraint') >= 0) {
+        return false // já existe: idempotência funcionando
+      }
+      throw err // causa desconhecida: não silenciar
     }
   }
 
@@ -323,8 +341,14 @@ cronAdd('lembretes_diarios', '0 11 * * *', () => {
             marcarFalha(reg, err)
             totalFalhas++
           }
-        } catch (_) {
+        } catch (err) {
+          /* Antes era `catch (_)`: contava a falha sem dizer POR QUE. Quando o
+             `registrar` passou a propagar erro que não é de unicidade, esse
+             catch virou o único lugar onde a causa apareceria — e ela estava
+             sendo descartada. Um contador sem motivo obriga a caçar no log do
+             servidor o que já está na mão. */
           totalFalhas++
+          log('retorno falhou: ' + String(err).slice(0, 160))
         }
       }
     } catch (err) {
@@ -371,8 +395,10 @@ cronAdd('lembretes_diarios', '0 11 * * *', () => {
               marcarFalha(reg, err)
               totalFalhas++
             }
-          } catch (_) {
+          } catch (err) {
+            // mesmo motivo do ramo de retorno: a causa tem de aparecer
             totalFalhas++
+            log('aniversario falhou: ' + String(err).slice(0, 160))
           }
         }
       }

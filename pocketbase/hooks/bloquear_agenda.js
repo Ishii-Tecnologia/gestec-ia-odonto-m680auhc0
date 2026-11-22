@@ -129,8 +129,20 @@ routerAdd(
         $app.delete(bloqueio)
       } catch (_) {}
 
+      /* A versão anterior testava 'UNIQUE' e 'idx_slot' e NUNCA casava: o SQLite
+         deste runtime devolve
+             "GoError: inicio: Value must be unique; sala_id: Value must be unique."
+         com "unique" em minúscula, sem citar o nome do índice. Resultado: a
+         mensagem amigável era código morto e o balcão via o erro cru do motor.
+
+         Testo sem depender de maiúscula. */
       const texto = String(err)
-      if (texto.indexOf('UNIQUE') >= 0 || texto.indexOf('idx_slot') >= 0) {
+      const baixo = texto.toLowerCase()
+      if (
+        baixo.indexOf('unique') >= 0 ||
+        texto.indexOf('idx_slot') >= 0 ||
+        baixo.indexOf('constraint') >= 0
+      ) {
         return e.badRequestError(
           'Esse periodo tem atendimento marcado ou outro bloqueio. Cancele antes de bloquear.',
         )
